@@ -1,0 +1,161 @@
+#define CONVERGENCE 1e-20
+#define ITERLIM 1000000
+#define LAMBDA_FACTOR 10
+#define LAMBDA_START 1e-3
+
+/* lvmrq: non-linear regression algorithm, using the Levenberg-Marquardt
+ * method. "sig" is an array containing the standard deviation of each point
+ * (xi[i], yi[i]). "a" is the set of "m" parameters, from which the first
+ * "mfit" will be adjusted, and the next m-mfit will be kept fixed.
+ * the algorithm must be provided with "f(x, params)" (the model
+ * function), and "dfda(x, params, k)", which calculates the derivative
+ * with respect to the kth parameter at the point x
+ */
+void lvmrq(int n,                       /* number of points */
+           int m,                       /* number of parameters */
+           int mfit,                    /* number of parameters to fit */
+           double xi[n], double yi[n],  /* data points */
+           double a[m],                 /* parameters (guess) */
+           double sig[n],               /* standard deviations */
+           double f(double x, double params[]), /* model function */
+           double dfda(double x, double params[], int k)) /* derivative
+                                                           * function */
+{
+    /* this function is used as an interface to the provided functions,
+     * to calculate the fitted values and the derivatives
+     */
+    void func(int n, int mfit, double xi[n], double yi[n], double a[],
+              double dyda[n][mfit], double yfit[n])
+    {
+        int i, k;
+        /* obtain fitted ys */
+        for (i = 0; i < n; i++) {
+            yfit[i] = f(xi[i], a);
+        }
+        /* obtain derivatives with respect to each parameter a[k] at each
+         * abscise xi. dyda has dimensions n by mfit. Each row contains
+         * the derivatives at one point with respect to each parameter
+         */
+        for (i = 0; i < n; i++) {
+            for (k = 0; k < mfit; k++) {
+                dyda[i][k] = dfda(xi[i], a, k);
+            }
+        }
+    }
+
+    /* definitions here */
+    int i, j, k, iters = 0;
+    double chisq,
+           alpha[mfit][mfit], /* (1/2) * hessian matrix */
+           beta[mfit][1], /* (-1/2)*gradient vector */
+           covar[mfit][mfit], /* will hold the covariance matrix */
+           yfit[n], /* will hold the fitted values for each xi */
+           dyda[n][mfit], /* derivatives. Each row contains the
+           derivatives at one point with respect to each parameter */
+           lambda, ainc[mfit], /* ainc = correction over the parameters */
+           anew[m], /* new values of the parameters (a + ainc) */
+           tmp, conv;
+    
+    /* call func to fill yfit and dyda */
+    func(n, mfit, xi, yi, a, dyda, yfit);
+    /* calculate chi square */
+    chisq = chisquare(n, yi, yfit, sig);
+    /* set lambda to a low value (ex. 0.001) */
+    lambda = LAMBDA_START;
+    conv = CONVERGENCE + 1;
+    while (iters < ITERLIM && (conv > CONVERGENCE || conv < 0) && chisq) {
+        iters++;
+        /* calculate alpha and beta
+         * note that alpha is simetric */
+         buildAlphaBeta(n, mfit, lambda, dyda, alpha, beta, sig, yi, yfit);
+        /* solve alpha*ainc = beta to get ainc
+         * beta contains the correction over a */
+        gaussj(mfit, 1, alpha, beta); 
+        /* update anew */
+        for (i = 0; i < m; i++) {
+            anew[i] = i < mfit ? (a[i] + beta[i][0]) : a[i];
+        }
+        /* calculate chisquare(a + ainc) */
+        func(n, mfit, xi, yi, anew, dyda, yfit);
+        tmp = chisquare(n, yi, yfit, sig);
+        conv = chisq - tmp;
+        /* worse fit */
+        if (conv <= 0 && chisq != 0) {
+            lambda *= LAMBDA_FACTOR;
+            /* new iteration with the same parameter set "a", but now
+             * yfit and dyda correspond to "anew". Logic says I should
+             * recover the old yfit and dyda, but it only seems to harm
+             * the performance */
+        /* better fit */
+        } else if (conv > CONVERGENCE) {
+            vcopy(mfit, a, anew);
+            chisq = tmp;
+            lambda /= LAMBDA_FACTOR;
+        }
+    }
+    /* build alpha with lambda = 0 and calculate its inverse (the matrix
+     * of covariances) */
+    lambda = 0;
+    func(n, mfit, xi, yi, anew, dyda, yfit); /* update dyda, yfit */
+    buildAlphaBeta(n, mfit, lambda, dyda, alpha, beta, sig, yi, yfit);
+    for (i = 0; i < mfit; i++) { /* build identity matrix */
+        for (j = 0; j < mfit; j++) {
+            covar[i][j] = (i != j ? 0 : 1);
+        }
+    }
+    gaussj(2, 2, alpha, covar); /* build inverse of alpha, save in covar */
+    if (chisq > 1) {
+        printf("lvmrq: Convergence not achieved\n");
+        printf("chi2 = %.4f\niters: %d\n", chisq, iters);
+    } else {
+        printf("lvmrq: Convergence achieved after %d iteration%s.\n", iters, iters != 1 ? "s" : "");
+        printf("matrix of covariances:\n");
+        mprint(mfit, mfit, covar);
+    }
+}
+           
+/* Given n values (yi[0...n]) with standard deviations sig[0...n], and
+ * n fitted values (y[0...n]), returns the chi square of this data set:
+ *
+ * chi square = sum([(yi-yfit)^2]/sig)
+ */
+double chisquare(int n, double yi[n], double yfit[n], double sig[n])
+{
+    int i;
+    double chisq, tmp;
+    for (i = chisq = 0; i < n; i++) {
+        tmp = (yi[i] - yfit[i]) / sig[i];
+        chisq += tmp * tmp;
+    }
+    return chisq;
+}
+
+/* buildAlphaBeta: builds alpha (1/2*hessian) and beta (-1/2*gradient)
+ */
+void buildAlphaBeta(int n, int mfit, int lambda, double dyda[][mfit],
+                    double alpha[mfit][mfit], double beta[mfit][1],
+                    double sig[n], double yi[n], double yfit[n])
+{
+    double tmp;
+    int i, j, k;
+    for (i = 0; i < mfit; i++) {
+        for (j = 0; j <= i; j++) {
+            alpha[i][j] =  0;
+            for (k = 0; k < n; k++) {
+                tmp = 1/sig[k];
+                tmp *= tmp;
+                alpha[i][j] += dyda[k][i]*dyda[k][j] * tmp;
+            }
+            if (i != j) {
+                alpha[j][i] = alpha[i][j];
+            } else {
+                alpha[i][j] *= (1+lambda);
+            }
+
+        }
+        beta[i][0] = 0;
+        for (k = 0; k < n; k++) {
+            beta[i][0] += ((yi[k] - yfit[k]) * dyda[k][i]) / (sig[k]*sig[k]);
+        }
+    }
+}
