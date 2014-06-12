@@ -1,0 +1,109 @@
+Available models:
+
+- michaelis
+
+Multisubstrate:
+- alberty
+- pingpong
+
+Inhibitions:
+- mixed
+- uncompetitive
+- competitive
+
+pH:
+- effect of the pH
+
+Temperature:
+- Michaelis-Menten with varying kcat
+- Michaelis-Menten with enzyme inactivation
+
+1. michaelis
+
+    Independent variables: S (Substrate concentration)
+    Parameters: Vmax, Km
+    Equation: v0 = Vmax*S / (Km + S)
+
+2. alberty
+
+    Independent variables: B, A (=AX) (two substrates)
+    Parameters: Vmax, KmA, KmB, KsA
+    Equation: v0 = Vmax[AX][B] / (KmA[B] + KmB[AX] + [AX][B] + KsA*KmB)
+
+    -Model:
+    B, AX = Substrates, E = Enzyme
+
+       +B       +AX                   -A        -BX    --->
+    E <---> EB <---> EAXB <---> EABX <---> EBX <---> E
+       -B       -AX                   +A        +BX    <---
+
+3. pingpong (Double Displacement)
+
+    Independent variables: B, A
+    Parameters: Vmax, KmA, KmB
+    Equation:
+    v0 = Vmax[AX][B] / (KmAX[B] + KmB[AX] + [AX][B])
+
+4. mixed (Mixed Inhibition)
+
+    Independent variables: S (substrate concentration), I (inhibitor concentration)
+    Parameters: Vmax, Km, KIa, KIb
+    Equation: v0 = Vmax[S] / (Km*(1+[I]/KIa) + [S]*(1+[I]/KIb))
+
+    -Model:
+             Ks         k2
+    E + S <------> ES -----> E + P
+
+             KIa
+    E + I <------> EI
+
+             Ks'           KIb
+    EI + S <------> ESI <------> ES + I
+
+5. competitive (Competitive Inhibition)
+    (Analogous to mixed, with KIb = infinite)
+
+    Independent variables: S (substrate concentration), I (inhibitor concentration)
+    Parameters: Vmax, Km, KIa
+    Equation: v0 = Vmax[S] / (Km*(1+[I]/KIa))
+
+6. uncompetitive (Uncompetitive Inhibition)
+    (Analogous to mixed, with KIa = infinite)
+
+    Independent variables: S (substrate concentration), I (inhibitor concentration)
+    Parameters: Vmax, Km, KIb
+    Equation: v0 = Vmax[S] / (Km+[S]*(1+[I]/KIb))
+
+7. noncompetitive (Non-competitive Inhibition)
+    (Analogous to mixed, with KIa = KIb)
+
+    Independent variables: S (substrate concentration), I (inhibitor concentration)
+    Parameters: Vmax, Km, KIb
+    Equation: v0 = Vmax[S] / ((Km + [S])*(1+[I]/KIb)))
+
+8. ph (Effect of the pH)
+
+    Independent variables: S (substrate concentration), H (proton concentration = 
+                           10^(-pH)
+    Parameters: Vmax, Km, Ka1, Ka2, Ka3, Ka4
+    Equation:  v0 = Vm*[S] /
+                    (Km*(1+[H+]/Ka1 + Ka3/[H+]) + [S]*(1 + [H+]/Ka2 + Ka4/[H+]))
+    - Model:
+            Ks       k2
+    E + S <----> ES ----> E + P
+
+              Ka1                      Ka2                     Ks'
+    E + H+  <-----> EH  ,  ES + H+  <-----> HES ,    HE + S <-----> HES
+
+              Ka3                     Ka4                      K's
+    E + OH- <-----> EOH ,  ES + OH- <-----> ESOH ,   EOH + S <-----> ESOH
+
+9. michaleistemp (Michaelis-Menten with varying kcat)
+
+    Independent variables: S (substrate concnetration), T (temperature, kelvins)
+    Parameters: Vmax, AE (Enzyme concentration*A(pre-exponential factor),
+                Ea (activation energy)
+    Equation:  v0 = [S]*[E]*A*exp(-Ea/RT) / (Km + [S])
+
+
+10. michaelisinactiv (Michaelis-Menten with enzyme inactivation)
