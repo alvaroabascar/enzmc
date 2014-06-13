@@ -1,3 +1,6 @@
+0. Completar models.txt
+
+
 1. Rehacer CLI
     - Añadir opción para combinar los valores de varias variables indep.
         Ej. Cuando hay S y I, S=[1,2,3] e I=[4,5,6] daría lugar a todas las
