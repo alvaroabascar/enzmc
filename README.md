@@ -12,7 +12,7 @@ independent variables and one or more parameters. For example, the
 Michaelis-Menten model relates the initial reaction rate (v0) to the substrate
 concentration (S) and to two parameters (Km and vmax):
 
-        v0 = vmax*S / (Km + S)   (Michaelis-Menten model)
+            v0 = vmax*S / (Km + S)   (Michaelis-Menten model)
 
 The parameters of a given model are of interest in order to make predictions,
 but also to compare different enzymes, substrates, inhibitors, etc.
@@ -70,4 +70,3 @@ the experiment it might depend on the value of the measure. The "real" values
 that we choose must also be as close as possible to the real (truly real)
 values. As there is no way to know them, we must conform to choose the values
 obtained by some prior experiment.
-
