@@ -30,8 +30,8 @@ the best between different designs.
 -- The method --
 
 If we knew the real value of the parameters, we could test the quality of a
-given design by means of repeating the experiment hundreds or thousands of times
-. Each time we would perform a nonlinear regression, obtaining a value of the
+given design by means of repeating the experiment thousands of times. Each time
+we would perform a nonlinear regression analysis, obtaining a value of the
 parameters. Finally we could obtain the mean of each parameter, and standard
 deviation of each parameter with respect to the real value.
 values. The design would be more accurate the closer the mean of each parameter
