@@ -108,5 +108,4 @@ Temperature:
 
 10. michaelisinactiv (Michaelis-Menten with enzyme inactivation)
 
-
 [COMPLETAR]
