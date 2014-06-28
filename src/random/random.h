@@ -1,8 +1,8 @@
 #ifndef __RAND__
 #define __RAND__
-#include <stdlib.h>
 #include <math.h>
 
+float ran0(long *seed);
 float boxmuller(int seed);
 
 #endif
