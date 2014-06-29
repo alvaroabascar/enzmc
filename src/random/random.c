@@ -25,7 +25,7 @@ float ran0(long *idum) {
 
 float boxmuller(int seed)
 {
-    long dum;
+    long dum = 0;
     float x1, x2, y1, r, fac;
     static float y2;
     static int flag = 0;
