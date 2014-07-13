@@ -46,6 +46,7 @@ int montecarlo(double model(double X[], double p[]), /* model function */
                 FILE *fp)
 {
     int i, j, nsuccess, niters, skip;
+    long seed;
     double y[n]; /* dependent variable values at the n given points */
     double yi[n]; /* same, with error added */
     double params_guess[m];
@@ -67,14 +68,14 @@ int montecarlo(double model(double X[], double p[]), /* model function */
         fprintf(fp, "y = ");
         vfprint(fp, n, y);
     }
-    boxmuller(-1*time(NULL)); /* init gaussian random generator */
+    seed = time(NULL); /* set seed */
     for (i = nsuccess = 0; i < nsims; i++) {
         printf("\rRunning simulations: %d%%",  i*100 / nsims);
         if (fp != NULL)
             fprintf(fp, "\n- Sim. num. %d\n", i);
         /* add error */
         for (j = 0; j < n; j++) {
-            yi[j] = y[j] + boxmuller(0) * dev;
+            yi[j] = y[j] + boxmuller(seed) * dev;
         }
         if (fp != NULL) {
             fprintf(fp, "yi = ");

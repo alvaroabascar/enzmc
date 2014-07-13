@@ -23,24 +23,19 @@ float ran0(long *idum) {
     return ans;
 }
 
-float boxmuller(int seed)
+float boxmuller(long seed)
 {
-    long dum = 0;
     float x1, x2, y1, r, fac;
     static float y2;
     static int flag = 0;
 
-    // Init seed
-    if (seed < 0) {
-        dum = -1 * seed;
-    }
     if (flag) {
         flag = 0;
         return y2;
     }
     do {
-        x1 = ran0(&dum)*2 - 1;
-        x2 = ran0(&dum)*2 - 1;
+        x1 = ran0(&seed)*2 - 1;
+        x2 = ran0(&seed)*2 - 1;
         r = x1*x1 + x2*x2;
     } while (r >= 1);
     fac = sqrt((-2*log(r)/r));
