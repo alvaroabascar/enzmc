@@ -3,6 +3,6 @@
 #include <math.h>
 
 float ran0(long *seed);
-float boxmuller(long seed);
+float boxmuller(long *seed);
 
 #endif

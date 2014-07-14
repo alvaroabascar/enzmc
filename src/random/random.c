@@ -8,22 +8,22 @@
 #define IR 2836
 #define MASK 123459876
 
-float ran0(long *idum) {
+float ran0(long *seed) {
     long k;
     float ans;
 
-    *idum ^= MASK;
-    k = (*idum)/IQ;
-    *idum = IA * (*idum - k*IQ) - IR*k;
-    if (*idum < 0) {
-        * idum += IM;
+    *seed ^= MASK;
+    k = (*seed)/IQ;
+    *seed = IA * (*seed - k*IQ) - IR*k;
+    if (*seed < 0) {
+        * seed += IM;
     }
-    ans = AM*(*idum);
-    *idum ^= MASK;
+    ans = AM*(*seed);
+    *seed ^= MASK;
     return ans;
 }
 
-float boxmuller(long seed)
+float boxmuller(long *seed)
 {
     float x1, x2, y1, r, fac;
     static float y2;
@@ -34,8 +34,8 @@ float boxmuller(long seed)
         return y2;
     }
     do {
-        x1 = ran0(&seed)*2 - 1;
-        x2 = ran0(&seed)*2 - 1;
+        x1 = ran0(seed)*2 - 1;
+        x2 = ran0(seed)*2 - 1;
         r = x1*x1 + x2*x2;
     } while (r >= 1);
     fac = sqrt((-2*log(r)/r));

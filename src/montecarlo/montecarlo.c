@@ -69,13 +69,14 @@ int montecarlo(double model(double X[], double p[]), /* model function */
         vfprint(fp, n, y);
     }
     seed = time(NULL); /* set seed */
+    printf("seed = %d\n", seed);
     for (i = nsuccess = 0; i < nsims; i++) {
         printf("\rRunning simulations: %d%%",  i*100 / nsims);
         if (fp != NULL)
             fprintf(fp, "\n- Sim. num. %d\n", i);
         /* add error */
         for (j = 0; j < n; j++) {
-            yi[j] = y[j] + boxmuller(seed) * dev;
+            yi[j] = y[j] + boxmuller(&seed) * dev;
         }
         if (fp != NULL) {
             fprintf(fp, "yi = ");
