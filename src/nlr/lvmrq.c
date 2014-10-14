@@ -141,7 +141,7 @@ double lvmrq(
         iters++;
         /* calculate alpha and beta, note that alpha is symmetric */
         buildAlphaBeta(n, mfit, lambda, dyda, alpha, beta, sig, yi, yfit);
-        /* solve alpha*ainc = beta to get ainc
+        /* solve alpha*ainc = beta, to get ainc
          * beta contains the correction over a */
         gaussj(mfit, 1, alpha, beta); 
         /* update anew */

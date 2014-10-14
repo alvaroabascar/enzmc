@@ -1,13 +1,8 @@
-OBJECTS = gaussjbs.o test testinv
+OBJECTS = gaussjbs.o
 
 CC = gcc
 
-TESTDEPS = ../misc/matrix.o ../lineq/gaussjbs.o
 all: $(OBJECTS)
-
-test: $(TESTDEPS)
-
-testinv: $(TESTDEPS)
 
 clean:
 	rm $(OBJECTS)

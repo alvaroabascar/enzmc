@@ -1,3 +1,15 @@
+/*
+ *                              IMPORTANT NOTE
+ *
+ * This file provides the user interface to the program. However, it has been
+ * developed EMBARRASINGLY bad. Any serious development on this program should
+ * discard (or refactor heavily) this code. The rest of the code used by the
+ * program (levenberg-marquardt, gauss-jordan, etc.) has a decent quality, at
+ * least to the extent of my limited capacity
+ *
+ */
+
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <argp.h>
@@ -460,10 +472,10 @@ int run_normal_mode(struct arguments *args)
     printf("----------------------------------------------------\n");
     for (i = 0; i < m; i++) {
         if (params_variance[i] > 0.001) {
-            printf("%d | %-6s %10.6f   %10.4f    %10.2f%%\n", i, params_name[i],
+            printf("%d | %-6s %10.4f %10.4f    %10.2f%%\n", i, params_name[i],
             params_mean[i], sqrt(params_variance[i]), 100*sqrt(params_variance[i])/params_mean[i]);
         } else {
-            printf("%d | %-6s %10.6e   %10.4e    %10.2f%%\n", i, params_name[i],
+            printf("%d | %-6s %10.4e   %10.4e    %10.2f%%\n", i, params_name[i],
             params_mean[i], sqrt(params_variance[i]), 100*sqrt(params_variance[i])/params_mean[i]);
         }
         printf("----------------------------------------------------\n");
