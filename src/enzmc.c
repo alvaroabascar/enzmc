@@ -1,3 +1,19 @@
+/*
+ *                                   IMPORTANT
+ *
+ * Please note that the code of this file (the UI) was created fastly and that
+ * it is a real mess. 
+ * If you plan to build on this program, please redo the UI from scratch. The
+ * rest of the code that I created (levenberg-marquardt algorithm, gauss-jordan
+ * and so on) have a better quality (however, I'm a beginner and you should
+ * revise them).
+ *
+ * Cheers ;)
+ *
+ *
+ */
+
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <argp.h>
