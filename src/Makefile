@@ -8,7 +8,7 @@ DEPS = montecarlo/montecarlo.o nlr/lvmrq.o random/random.o misc/mathlib.o misc/m
 
 all:	enzmc
 
-enzmc:	$(DEPS)
+enzmc: $(DEPS)
 
 objects:
 	cd lineq; make
@@ -21,8 +21,8 @@ clean:
 	rm enzmc
 
 cleanall:
-	cd lineq; make clean;
-	cd misc; make clean;
-	cd models; make clean;
-	cd nlr; make clean;
-	cd random; make clean;
+	cd lineq; make clean
+	cd misc; make clean
+	cd models; make clean
+	cd nlr; make clean
+	cd random; make clean
