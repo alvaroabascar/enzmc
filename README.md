@@ -1,10 +1,11 @@
-== EnzMC ==
+enzmc
+====
 
-EnzMC is a simple tool which aims to ease and improve the design of enzyme
+**enzmc** is a simple tool which aims to ease and improve the design of enzyme
 assays.
 
--- Enzyme assays --
-
+Enzyme Assays
+-------------
 The (initial) reaction rate of enzymatic reactions can be described by a variety
 of mathematical models. Each of them relates the initial reaction rate (v0, the
 dependent variable) to a mathematical expression which combines one or more
@@ -27,7 +28,8 @@ The quality of the results is highly dependent on the choice of the points (the
 design of the experiment), and thus it is interesting to have a way to choose
 the best between different designs.
 
--- The method --
+The method
+----------
 
 If we knew the real value of the parameters, we could test the quality of a
 given design by means of repeating the experiment thousands of times. Each time
