@@ -54,14 +54,14 @@ not knowing the real values would not be there if we could somehow choose them.
 Putting it all together, we can devise the following method to test the quality
 of a given design:
 
-1- We choose the "real" values of the parameters.\\
-2- We calculate the v0 at the chosen points.\\
-3- We add a random error to each v0, obtaining a pseudo-experimental data set.\\
+1- We choose the "real" values of the parameters.  
+2- We calculate the v0 at the chosen points.  
+3- We add a random error to each v0, obtaining a pseudo-experimental data set.  
 4- We perform nonlinar regression on that data set, obtaining the values of the
-   parameters.\\
-5- We repeat steps 3,4 several thousand times.\\
+   parameters.  
+5- We repeat steps 3,4 several thousand times.  
 6- For each parameter, we obtain its mean and its standard deviation with
-respect to the real value.\\
+respect to the real value.  
 
 By repeating this method with differnt designs we would be able to easily
 compare their quality. The closer the simulations are to reality, the more
