@@ -24,7 +24,7 @@
 #define NREPS 10000
 
 const char *argp_program_bug_address = "alvaroabascar@gmail.com";
-const char *argp_program_version = "version 0.5";
+const char *argp_program_version = "version 1.0";
 
 const char *_models_[20] = {
     "michaelis",
