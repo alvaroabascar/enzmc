@@ -1,16 +1,20 @@
 #ifndef _ENZMC_
 
+/* Stuff directly related to the implementation of the cli */
+
+/* program modes */
 #define NORMAL_MODE 52
 #define INTERACTIVE_MODE 53
 #define GRAPHICAL_MODE 54
 #define FILE_MODE 55
 #define TEMPLATE_MODE 56
 
-/* error messages */
+/* Error messages */
 #define ERROR_LACK_OPTS "lacking options (model, params, data and error are mandatory"
 #define ERROR_TOO_MANY_ARGS "too many arguments (see --usage)"
 #define ERROR_NO_FILENAME "you must specify a file name:\n./enzmc --template model filename"
 
+/* Arguments which must be provided to do the simulation. */
 struct arguments {
   short mode;
   short verbose;

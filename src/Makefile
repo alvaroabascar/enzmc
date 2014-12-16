@@ -4,7 +4,7 @@ LDLIBS = -lm
 
 CC = gcc
 
-DEPS = montecarlo/montecarlo.o nlr/lvmrq.o random/random.o misc/mathlib.o misc/matrix.o lineq/gaussjbs.o models/enzyme.o
+DEPS = models/models.o montecarlo/montecarlo.o nlr/lvmrq.o random/random.o misc/mathlib.o misc/matrix.o lineq/gaussjbs.o models/enzyme.o
 
 all:	enzmc
 

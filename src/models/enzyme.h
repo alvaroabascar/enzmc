@@ -11,7 +11,7 @@ double michaelis(double S[1], double p[2]);
 
 /********************* Multi Substrate models ************************/
 
-double alberty(double S[2], double p[4]);
+double alberty(double S[2], double p[3]);
  /* Alberty equation (multi-substrate kinetic)
  *
  * E = Enzyme
@@ -168,7 +168,7 @@ double michaelistemp(double X[2], double p[3]);
  *       fixed
  */
 
-double michaelisinactiv(double X[2], double p[3]);
+double michaelis_inactiv(double X[2], double p[3]);
 /* Michaelis-Menten kinetics accounting for thermal inactivation of the enzyme
  *
  * Equation:

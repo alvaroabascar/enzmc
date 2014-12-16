@@ -7,20 +7,10 @@
 #include <regex.h>
 #include "include/montecarlo.h"
 #include "include/enzyme.h"
-
+#include "include/models.h"
 #include "include/enzmc.h"
-#define _ENZMC_
 
-/*************************
- * Replace this by a struct ?
- *************************/
-
-/* maximum number of independent variables */
-#define MAX_INDEP 10
-/* maximum number of chars in the --data field */
-#define MAX_DATA_CHARS 1000
-/* maximum number of parameters */
-#define MAX_PARAMS 10
+/* MAX_INDEP, MAX_DATA_CHARS, MAX_PARAMS in models.h */
 #define NREPS 10000
 
 const char *argp_program_bug_address = "alvaroabascar@gmail.com";
@@ -35,8 +25,7 @@ const char *_models_[20] = {
     "uncompetitive",
     "noncompetitive",
     "ph",
-    "michaelistemp",
-    "michaelisinactiv"};
+    "michaelistemp"};
 
 static int parse_opt(int key, char *arg, struct argp_state *state)
 {
@@ -577,15 +566,6 @@ int parse_data(struct arguments *args, double *S[], int *nvars, int *m,
         params_name[1] = "Km";
         params_name[2] = "Ea";
         params_name[3] = "T1";
-    } else if (strcmp(args->model, "michaelisinactiv") == 0) {
-        (*f) = michaelisinactiv;
-        *m = 3;
-        *nvars = 2;
-        pattern_data[0] = "S[ ]*=[ ]*(\\[[ ,.0-9eE-]*\\])";
-        pattern_data[1] = "t[ ]*=[ ]*(\\[[ ,.0-9eE-]*\\])";
-        params_name[0] = "Vmax";
-        params_name[1] = "Km";
-        params_name[2] = "kt";
     } else {
         fprintf(stderr, "Error: unrecognized model name: \"%s\"\n", args->model);
         return -1;
