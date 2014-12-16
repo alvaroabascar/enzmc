@@ -1,7 +1,4 @@
-/*
- * Crappiest CLI ever
- */
-
+/* Coolest CLI ever */
 #include <stdio.h>
 #include <stdlib.h>
 #include <argp.h>
@@ -11,16 +8,11 @@
 #include "include/montecarlo.h"
 #include "include/enzyme.h"
 
-/* modes */
-#define NORMAL_MODE 52
-#define INTERACTIVE_MODE 53
-#define GRAPHICAL_MODE 54
-#define FILE_MODE 55
-#define TEMPLATE_MODE 56
-
+#include "include/enzmc.h"
+#define _ENZMC_
 
 /*************************
- * Replace this by a struct
+ * Replace this by a struct ?
  *************************/
 
 /* maximum number of independent variables */
@@ -30,6 +22,10 @@
 /* maximum number of parameters */
 #define MAX_PARAMS 10
 #define NREPS 10000
+
+const char *argp_program_bug_address = "alvaroabascar@gmail.com";
+const char *argp_program_version = "version 0.5";
+
 const char *_models_[20] = {
     "michaelis",
     "alberty",
@@ -41,31 +37,6 @@ const char *_models_[20] = {
     "ph",
     "michaelistemp",
     "michaelisinactiv"};
-
-const char *argp_program_bug_address = "alvaroabascar@gmail.com";
-const char *argp_program_version = "version 0.5";
-
-struct arguments {
-    short mode;
-    short verbose;
-    char *model;
-    char *params;
-    char *fixed_params;
-    char *guess;
-    char *data;
-    char *error;
-    char *fileoutput;
-    char *fileinput;
-};
-
-/************************
- * Move this to a .h file
- * **********************/
-int run_interactive_mode(struct arguments *);
-int run_graphical_mode(struct arguments *);
-int run_normal_mode(struct arguments *);
-int parse_array(double *S_arr, int n, char S_str[]);
-int strcopy(char *dst, char *src, int start, int end);
 
 static int parse_opt(int key, char *arg, struct argp_state *state)
 {
@@ -114,14 +85,14 @@ static int parse_opt(int key, char *arg, struct argp_state *state)
             if (args->mode == NORMAL_MODE) {
                 if (!(args->model && args->params && args->error &&
                       args->data))
-                    argp_failure(state, 1, 0, "lacking options (model, params, data and error are mandatory)");
+                    argp_failure(state, 1, 0, ERROR_LACK_OPTS);
             }
             if (nargs > 1) {
-                argp_failure(state, 1, 0, "too many arguments (see --usage)");
+                argp_failure(state, 1, 0, ERROR_TOO_MANY_ARGS);
             }
             if (args->mode == TEMPLATE_MODE)
                 if (nargs < 1)
-                    argp_failure(state, 1, 0, "you must specify a file name:\n./enzmc --template model filename");
+                    argp_failure(state, 1, 0, ERROR_NO_FILENAME);
             break;
     }
     return 0;
