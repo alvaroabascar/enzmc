@@ -14,28 +14,6 @@ double michaelis(double S[1], double p[2])
     return p[0] * S[0] / (p[1] + S[0]);
 }
 
-/* Michaelis-Menten derivative:
- * Parameters:
- *              S[1]      -> array of one element (substrate concentration)
- *              p[2] -> array of two elements: { Vmax, Km }
- *              k         -> 0 = derivative with respect to Vmax
- *                           1 = derivative with respect to Km
- * Output:
- *              if k = 0 : dv/dVmax
- *              if k = 1 : dv/dKm
- */
-double michaelis_dyda(double S[1], double p[2], int k)
-{
-    double tmp;
-    /* p[0] = vmax */
-    if (k == 0) {
-        return S[0] / (p[1] + S[0]);
-    /* p[1] = Km */
-    } else if (k == 1) {
-        return - p[0] * S[0] / ((p[1] + S[0]) * (p[1] + S[0]));
-    }
-}
-
 /********************* Multi Substrate ************************/
 
 /* Alberty equation (multi-substrate kinetic)
