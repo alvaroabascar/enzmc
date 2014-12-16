@@ -18,13 +18,17 @@
 #define FILE_MODE 55
 #define TEMPLATE_MODE 56
 
+
+/*************************
+ * Replace this by a struct
+ *************************/
+
 /* maximum number of independent variables */
 #define MAX_INDEP 10
 /* maximum number of chars in the --data field */
 #define MAX_DATA_CHARS 1000
 /* maximum number of parameters */
 #define MAX_PARAMS 10
-
 #define NREPS 10000
 const char *_models_[20] = {
     "michaelis",
@@ -54,6 +58,9 @@ struct arguments {
     char *fileinput;
 };
 
+/************************
+ * Move this to a .h file
+ * **********************/
 int run_interactive_mode(struct arguments *);
 int run_graphical_mode(struct arguments *);
 int run_normal_mode(struct arguments *);
@@ -141,18 +148,23 @@ int main(int argc, char *argv[])
         {"verbose", 'v', 0, 0, "Display arguments on output"},
         {0}};
     struct argp argp = {options, parse_opt, "OUTPUT_FILE"};
-    struct arguments args;
-    args.mode = NORMAL_MODE;
-    args.model = NULL;
-    args.params = NULL;
-    args.fixed_params = NULL;
-    args.guess = NULL;
-    args.error = NULL;
-    args.data = NULL;
-    args.fileoutput = NULL;
-    args.fileinput = NULL;
-    args.verbose = 0;
+    struct arguments args = {
+      .mode = NORMAL_MODE,
+      .model = NULL,
+      .params = NULL,
+      .fixed_params = NULL,
+      .guess = NULL,
+      .error = NULL,
+      .data = NULL,
+      .fileoutput = NULL,
+      .fileinput = NULL,
+      .verbose = 0
+    };
     argp_parse(&argp, argc, argv, 0, 0, &args);
+
+    /********************************************
+     * create a simple API to contain the modes?
+     * *******************************************/
     switch(args.mode) {
     case INTERACTIVE_MODE:
         result = run_interactive_mode(&args);
@@ -377,6 +389,9 @@ int run_file_mode(struct arguments *args)
     return run_normal_mode(args);
 }
 
+/*****************************************
+ * dear god, take the output out of here!
+ * ****************************************/
 int run_normal_mode(struct arguments *args)
 {
     int i, j, m, mfit, n, nvars, *fitparams;
