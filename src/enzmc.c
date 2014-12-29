@@ -326,7 +326,7 @@ int run_file_mode(struct arguments *args)
     do {
         getline(&line, &nbytes, fp);
     } while (strcmp(line, "\n") == 0);
-    
+
     regcomp(&regex, "[0-9a-zA-Z ]*\n", REG_EXTENDED);
     regexec(&regex, line, 1, pmatch, 0);
     strcopy(fixed, line, pmatch[0].rm_so, pmatch[0].rm_eo - 1);

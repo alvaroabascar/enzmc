@@ -57,7 +57,7 @@ of a given design:
 1- We choose the "real" values of the parameters.  
 2- We calculate the v0 at the chosen points.  
 3- We add a random error to each v0, obtaining a pseudo-experimental data set.  
-4- We perform nonlinar regression on that data set, obtaining the values of the
+4- We perform nonlinear regression on that data set, obtaining the values of the
    parameters.  
 5- We repeat steps 3,4 several thousand times.  
 6- For each parameter, we obtain its mean and its standard deviation with
