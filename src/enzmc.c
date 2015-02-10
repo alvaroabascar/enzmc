@@ -72,16 +72,16 @@ static int parse_opt(int key, char *arg, struct argp_state *state)
             nargs++;
         case ARGP_KEY_END:
             if (args->mode == NORMAL_MODE) {
-                if (!(args->model && args->params && args->error &&
-                      args->data))
-                    argp_failure(state, 1, 0, ERROR_LACK_OPTS);
+              if (!(args->model && args->params && args->error &&
+                    args->data))
+                argp_failure(state, 1, 0, ERROR_LACK_OPTS);
             }
             if (nargs > 1) {
-                argp_failure(state, 1, 0, ERROR_TOO_MANY_ARGS);
+              argp_failure(state, 1, 0, ERROR_TOO_MANY_ARGS);
             }
             if (args->mode == TEMPLATE_MODE)
-                if (nargs < 1)
-                    argp_failure(state, 1, 0, ERROR_NO_FILENAME);
+              if (nargs < 1)
+                argp_failure(state, 1, 0, ERROR_NO_FILENAME);
             break;
     }
     return 0;
@@ -89,26 +89,26 @@ static int parse_opt(int key, char *arg, struct argp_state *state)
 
 int main(int argc, char *argv[])
 {
-    int result;
-    struct argp_option options[] = {
-        {0, 0, 0, 0, "Other program modes:", 1},
-        {"interactive", 'I', 0, 0, "Enter interactive mode"},
-        {"template", 't', "model", 0, "Create a template for the specified model"},
-        {"file", 'f', "input file", 0, "Get input from file"},
-        {"graphical", 'G', 0, OPTION_HIDDEN, "Enter graphical mode"},
-        {0, 0, 0, 0, "Mandatory parameters:", 2},
-        {"model", 444, "\"model name\"", 0, "Choose a model"},
-        {"params", 555, "\"Vm=5 Km=17\"", 0, "Set the parameters of the model"},
-        {"error", 666, "error", 0, "Set the estimated measurement error (absolute value)"},
-        {"data", 777, "\"X1=[0.3,0.45,0.6,...] X2=[0.1,0.2,0.4...]\"", 0, "Set the values of the independent variables"},
-        {0, 0, 0, 0, "Optional parameters:", 3},
-        {"guess", 888, "\"Vm=4 Km=5\"", OPTION_HIDDEN, "Set the guess of the parameters"},
-        {"fixed", 999, "\"Vm Kd\"", 0, "Indicate what parameters are fixed"},
-        {0, 0, 0, 0, "Informational options:", -1},
-        {"verbose", 'v', 0, 0, "Display arguments on output"},
-        {0}};
-    struct argp argp = {options, parse_opt, "OUTPUT_FILE"};
-    struct arguments args = {
+  int result;
+  struct argp_option options[] = {
+    {0, 0, 0, 0, "Other program modes:", 1},
+    {"interactive", 'I', 0, 0, "Enter interactive mode"},
+    {"template", 't', "model", 0, "Create a template for the specified model"},
+    {"file", 'f', "input file", 0, "Get input from file"},
+    {"graphical", 'G', 0, OPTION_HIDDEN, "Enter graphical mode"},
+    {0, 0, 0, 0, "Mandatory parameters:", 2},
+    {"model", 444, "\"model name\"", 0, "Choose a model"},
+    {"params", 555, "\"Vm=5 Km=17\"", 0, "Set the parameters of the model"},
+    {"error", 666, "error", 0, "Set the estimated measurement error (absolute value)"},
+    {"data", 777, "\"X1=[0.3,0.45,0.6,...] X2=[0.1,0.2,0.4...]\"", 0, "Set the values of the independent variables"},
+    {0, 0, 0, 0, "Optional parameters:", 3},
+    {"guess", 888, "\"Vm=4 Km=5\"", OPTION_HIDDEN, "Set the guess of the parameters"},
+    {"fixed", 999, "\"Vm Kd\"", 0, "Indicate what parameters are fixed"},
+    {0, 0, 0, 0, "Informational options:", -1},
+    {"verbose", 'v', 0, 0, "Display arguments on output"},
+    {0}};
+  struct argp argp = {options, parse_opt, "OUTPUT_FILE"};
+  struct arguments args = {
       .mode = NORMAL_MODE,
       .model = NULL,
       .params = NULL,
