@@ -8,4 +8,13 @@
 /* max number of parameters of a model */
 #define MAX_PARAMS 10
 
+struct model {
+  char *name;                                  // name of the model
+  double (*function) (double X[], double p[]); // function (ex. see enzyme.h)
+  int nparams;                                 // number of parameters
+  int nvars;                                   // number of indep vars
+  char *params[MAX_PARAMS];                    // names of the parameters
+  char *indep_vars[MAX_INDEP];                 // names of the indep vars
+};
+
 #endif /* __MODELS_H__ */

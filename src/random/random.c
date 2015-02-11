@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <math.h>
 
 #define IA 16807
 #define IM 2147483647

@@ -3,30 +3,19 @@
 #include <stdlib.h>
 #include <argp.h>
 #include <string.h>
-#include <math.h>
 #include <regex.h>
-#include <enzmc.h>
 #include "include/montecarlo.h"
 #include "include/enzyme.h"
 #include "include/enzmc.h"
 #include "include/models.h"
+
+#include "models/models.c"
 
 /* MAX_INDEP, MAX_DATA_CHARS, MAX_PARAMS in models.h */
 #define NREPS 10000
 
 const char *argp_program_bug_address = "alvaroabascar@gmail.com";
 const char *argp_program_version = "version 1.0";
-
-const char *_models_[20] = {
-    "michaelis",
-    "alberty",
-    "pingpong",
-    "mixed",
-    "competitive",
-    "uncompetitive",
-    "noncompetitive",
-    "ph",
-    "michaelistemp"};
 
 static int parse_opt(int key, char *arg, struct argp_state *state)
 {
@@ -120,7 +109,7 @@ int main(int argc, char *argv[])
      * *******************************************/
     switch(args.mode) {
     case NORMAL_MODE:
-        result = run_normal_mode(&args);
+        result = run_cli_mode(&args);
         break;
     case FILE_MODE:
         result = run_file_mode(&args);
@@ -132,419 +121,70 @@ int main(int argc, char *argv[])
     return result;
 }
 
-int create_template(char *model, char *filename)
+/* Given the user input (as a set of arguments stored in a
+ * struct arguments, call montecarlo to do the simulations and
+ * print the output to the user
+ */
+int run_cli_mode(struct arguments *args)
 {
-    FILE *fp;
-    char *params, *indep_vars;
-    if (!(fp = fopen(filename, "w"))) {
-        fprintf(stderr, "Error: could not open %s.\n", filename);
-        return -1;
-    }
-    /* michaelis */
-    if (strcmp(model, _models_[0]) == 0) {
-        params = "Vmax=\nKm=";
-        indep_vars = "S=[  ]";
-    /* alberty */
-    } else if (strcmp(model, _models_[1]) == 0) {
-        params = "Vmax=\nKmA=\nKmB=\nKsA=\n";
-        indep_vars = "A=[  ]\nB=[  ]";
-    /* pingpong */
-    } else if (strcmp(model, _models_[2]) == 0) {
-        params = "Vmax=\nKmA=\nKmB=";
-        indep_vars = "A=[  ]\nB=[  ]";
-    /* mixed */
-    } else if (strcmp(model, _models_[3]) == 0) {
-        params = "Vmax=\nKm=\nKIa=\nKIb=";
-        indep_vars = "S=[  ]\nI=[  ]";
-    /* competitive */
-    } else if (strcmp(model, _models_[4]) == 0) {
-        params = "Vmax=  Km=  KIa=";
-        indep_vars = "S=[  ]\nI=[  ]";
-    /* uncompetitive */
-    } else if (strcmp(model, _models_[5]) == 0) {
-        params = "Vmax=\nKm=\nKIb=";
-        indep_vars = "S=[  ]\nI=[  ]";
-    /* noncompetitive */
-    } else if (strcmp(model, _models_[6]) == 0) {
-        params = "Vmax=\nKm=\nKIb=";
-        indep_vars = "S=[  ]\nI=[  ]";
-    /* ph */
-    } else if (strcmp(model, _models_[7]) == 0) {
-        params = "Vmax=\nKm=\nKa1=\nKa2=\nKa3=\nKa4=";
-        indep_vars = "S=[  ]\nH=[  ]";
-    /* michaelis + temperature */
-    } else if (strcmp(model, _models_[8]) == 0) {
-        params = "Vmax=\nEa=\nKm=\nT1=\n";
-        indep_vars = "S=[ ]\nT=[ ]";
-    /* michaelis + thermal inactivation */
-    } else if (strcmp(model, _models_[9]) == 0) {
-        params = "Vmax=\nKm=\nkt=\n";
-        indep_vars = "S=[ ]\nt=[ ]";
-    } else {
-        fprintf(stderr, "Error: model \"%s\" is not recognized.\n", model);
-        return -1;
-    }
+  /* Retrieve the data related to this model, necessary to parse the input */
+  struct model *model = get_model(args->model);
+  if (!model) {
+    fprintf(stderr, "Unrecognized model name: %s\n", args->model);
+    return -1;
+  }
+  /* Array to store the arrays of values for the independent variables. nvars
+   * is the number of independent variables of the model.
+   */
+  double *data[model->nvars];
+  /* Array to hold the values of the parameters. */
+  double params[model->nparams];
+  /* Array to indicate the fixed/adjustable parameters. */
+  int fixed_params[model->nparams];
+  int *fixed_params_ptr = fixed_params;
+  /* Standard deviation of the gaussian error. */
+  double error;
+  /* Number of points (num of values of the each variable). */
+  int npoints;
+  /* Number of parameters to fit */
+  int mfit;
+  /* Means and variacnes of the adjusted parameters */
+  double means[model->nparams];
+  double variances[model->nparams];
 
-    fprintf(fp, "- Model: %s\n\n", model);
-    fprintf(fp, "- Independent variables:\n\n%s\n\n", indep_vars);
-    fprintf(fp, "- Parameters:\n\n%s\n\n", params);
-    fprintf(fp, "- Fixed parameters: None\n\n");
-    fprintf(fp, "- Error (absolute):");
+  printf("%s\n", model->name);
+  /*
+  montecarlo(model.function, params, params, error, NREPS, npoints, model.nvars,
+             model.nparams, mfit, fixed_params_ptr, data, means, variances,
+             NULL);
+   */
+  return -1;
 }
 
 int run_file_mode(struct arguments *args)
 {
-    char model[20], data[MAX_DATA_CHARS];
-    char params[MAX_PARAMS], fixed[MAX_PARAMS], error[10];
-    char *line = malloc(sizeof(char) * MAX_DATA_CHARS);
-    size_t nbytes = MAX_DATA_CHARS;
-    FILE *fp;
 
-    regex_t regex;
-    regmatch_t pmatch[1];
-
-    if (! (fp = fopen(args->fileinput, "r"))) {
-        fprintf(stderr, "Error: could not open input file %s.\n",
-                args->fileinput);
-        return -1;
-    }
-
-    /* get model name */
-    getline(&line, &nbytes, fp);
-    if (! parse_str("[a-zA-Z]*\n", line, model)) {
-        fprintf(stderr, "Error: Could not find model name.\n");
-        exit(1);
-    }
-
-    /* parse input file, according to model requirements (independent variables,
-     * parameters, fixed parameters, errors...
-     */
-
-
-    /* do stuff... */
-
-    /* Place the user input ina structure "args" and just call run_normal_mode,
-     * (the same function which parses command line data). It will care about
-     * the rest!
-     */
-    args->model = model;
-    args->data = data;
-    args->fixed_params = !strcmp(fixed, "") ? NULL : fixed;
-    args->error = error;
-    args->params = params;
-
-    /* Clean up */
-    free(line);
-    return run_normal_mode(args);
 }
 
-/*****************************************
- * dear god, take the output out of here!
- * ****************************************/
-int run_normal_mode(struct arguments *args)
+int create_template(char *modelname, char *fileout)
 {
-    int i, j, m, mfit, n, nvars, *fitparams;
-    char *data, *data2;
-    char *params_name[MAX_PARAMS];
-    double error;
-    double (*modelfunc)(double X[], double p[]);
-    double *S[MAX_INDEP];
-    double *params, *guess;
-    FILE *fp = fopen(args->fileoutput, "w");
-    params = malloc(MAX_PARAMS * sizeof(double));
-    guess = malloc(MAX_PARAMS * sizeof(double));
-    fitparams = malloc(MAX_PARAMS * sizeof(double));
-    for (i = 0; i < MAX_INDEP; i++)
-        S[i] = NULL;
-    if (args->verbose) {
-        printf("Model: %s\n", args->model);
-        printf("Parameters: %s\n", args->params);
-        printf("Fixed parameters: %s\n", args->fixed_params);
-        printf("Guess: %s\n", args->guess ? args->guess : args->params);
-        printf("Error: %s\n", args->error);
-    }
-    printf("Data: %s\n\n", args->data);
 
-    if ((error = atof(args->error)) == 0) {
-        fprintf(stderr, "Error: \"error\" must be a numeric value > 0\n");
-        return -1;
-    }
-    /* S will hold the values of all independent variables at each
-     * measured point. MAX_INDEP is the maximum number of independent variables
-     */
-    n = parse_data(args, S, &nvars, &m, params, guess, fitparams, &modelfunc, params_name);
-    /* n -> number of points
-     * S -> values of the independent variables
-     * nvars -> number of independent variables
-     * m -> number of parameters
-     * params -> values of the parameters
-     * guess -> guess of the parameters
-     * fitparams -> parameters to fit (1) or keep fixed (0)
-     * modelfunc -> the model function  
-     */
-     if (n < 0) {
-         return n;
-     }
-
-    /* build final matrix of independent variables values. Note that
-     * S is nvars by n, while the matrix must by n by nvars*/
-    double X[n][nvars];
-    for (i = 0; i < nvars; i++) {
-        for (j = 0; j < n; j++) {
-            X[j][i] = S[i][j];
-        }
-        free(S[i]);
-    }
-    /* Copy parameters and guesses in arrays of the right size and free
-     * memory */
-    double p[m]; /* parameters */
-    double p_guess[m]; /* guess */
-    int fit[m]; /* array indicating what parameters to fit/keep fixed */
-    int *fitp[m]; /* pointer to fit, to be passed to montecarlo */
-    *fitp = fit;
-    mfit = 0;
-    for (i = 0; i < m; i++) {
-        p[i] = params[i];
-        p_guess[i] = guess[i];
-        if ((fit[i] = fitparams[i]) == 1)
-            mfit++;
-    }
-    free(params);
-    free(guess);
-    free(fitparams);
-    double params_mean[m];
-    double params_variance[m];
-    if (fp != NULL) {
-        fprintf(fp, "Model: %s\nParams:\n%s\nPoints:\n%s\n", args->model,
-                args->params, args->data);
-    }
-    n = montecarlo(modelfunc, p, p_guess, error, NREPS, n, nvars, m, mfit,
-        fitp, X, params_mean, params_variance, fp);
-    /* --- output --- */
-    printf("\n Parameter     Mean      Standard Dev       CV(%%)\n");
-    printf("----------------------------------------------------\n");
-    for (i = 0; i < m; i++) {
-        if (params_variance[i] > 0.001) {
-            printf("%d | %-6s %10.6f   %10.4f    %10.2f%%\n", i, params_name[i],
-            params_mean[i], sqrt(params_variance[i]), 100*sqrt(params_variance[i])/params_mean[i]);
-        } else {
-            printf("%d | %-6s %10.6e   %10.4e    %10.2f%%\n", i, params_name[i],
-            params_mean[i], sqrt(params_variance[i]), 100*sqrt(params_variance[i])/params_mean[i]);
-        }
-        printf("----------------------------------------------------\n");
-    }
-    printf("Number of succesful adjustments: %d of %d (%.2f%%)\n", n, NREPS, 100*(float)n/(float)NREPS);
-    return 0;
 }
 
-/* parses the data points, returns the number of values if this is
- * equal for all the independent variables, or -1 if they do not.
- * Fills S[] with "nvars" pointers to double arrays, being "nvars" the
- * number of independent variables of the model
+/* Given the name of a model, return a ptr to the struct model with all the
+ * information necessary to use the model (see models.h).
  */
-int parse_data(struct arguments *args, double *S[], int *nvars, int *m,
-               double params[], double guess[], int fit[],
-               double (**f)(double X[], double p[]),
-               char *params_name[MAX_PARAMS])
+struct model *get_model(char *modelname)
 {
-    int i, j, n[MAX_INDEP];
-    char data[MAX_DATA_CHARS], data2[MAX_DATA_CHARS];
-    char *pattern_data[MAX_INDEP];
-    char *pattern_params[MAX_PARAMS];
-    regex_t regex;
-    regmatch_t pmatch[1];
-    strtok(args->model, "\n");
-    /* michaelis-menten */
-    if (strcmp(args->model, "michaelis") == 0) {
-        (*f) = michaelis;
-        *m = 2; /* num of parameters */
-        *nvars = 1; /* num of independent variables */
-        pattern_data[0] = "S[ ]*=[ ]*(\\[[ ,.0-9eE-]*\\])";
-        pattern_params[0] = "Vmax[ ]*=[ ]*[.0-9eE-]*";
-        pattern_params[1] = "Km[ ]*=[ ]*[.0-9eE-]*";
-        params_name[0] = "Vmax";
-        params_name[1] = "Km";
-
-    /* Alberty's equation (multisubstrate general equation) */
-    } else if (strcmp(args->model, "alberty") == 0) {
-        (*f) = alberty;
-        *m = 4;
-        *nvars = 2;
-        pattern_data[0] = "A[ ]*=[ ]*(\\[[ ,.0-9eE-]*\\])";
-        pattern_data[1] = "B[ ]*=[ ]*(\\[[ ,.0-9eE-]*\\])";
-        params_name[0] = "Vmax";
-        params_name[1] = "KmA";
-        params_name[2] = "KmB";
-        params_name[3] = "KsA";
-    /* Double substitution (ping-pong) */
-    } else if (strcmp(args->model, "pingpong") == 0) {
-        (*f) = pingpong;
-        *m = 3;
-        *nvars = 2;
-        pattern_data[0] = "A[ ]*=[ ]*(\\[[ ,.0-9eE-]*\\])";
-        pattern_data[1] = "B[ ]*=[ ]*(\\[[ ,.0-9eE-]*\\])";
-        params_name[0] = "Vmax";
-        params_name[1] = "KmA";
-        params_name[2] = "KmB";
-
-    /* mixed inhibition */
-    } else if (strcmp(args->model, "mixed") == 0) {
-        (*f) = mixed;
-        *m = 4;
-        *nvars = 2;
-        pattern_data[0] = "S[ ]*=[ ]*(\\[[ ,.0-9eE-]*\\])";
-        pattern_data[1] = "I[ ]*=[ ]*(\\[[ ,.0-9eE-]*\\])";
-        params_name[0] = "Vmax";
-        params_name[1] = "Km"; 
-        params_name[2] = "KIa";
-        params_name[3] = "KIb";
-    /* competitive inhibition */
-    } else if (strcmp(args->model, "competitive") == 0) {
-        (*f) = competitive;
-        *m = 3;
-        *nvars = 2;
-        pattern_data[0] = "S[ ]*=[ ]*(\\[[ ,.0-9eE-]*\\])";
-        pattern_data[1] = "I[ ]*=[ ]*(\\[[ ,.0-9eE-]*\\])";
-        params_name[0] = "Vmax";
-        params_name[1] = "Km"; 
-        params_name[2] = "KIa";
-    /* uncompetitive inhibition */
-    } else if (strcmp(args->model, "uncompetitive") == 0) {
-        (*f) = uncompetitive;
-        *m = 3;
-        *nvars = 2;
-        pattern_data[0] = "S[ ]*=[ ]*(\\[[ ,.0-9eE-]*\\])";
-        pattern_data[1] = "I[ ]*=[ ]*(\\[[ ,.0-9eE-]*\\])";
-        params_name[0] = "Vmax";
-        params_name[1] = "Km"; 
-        params_name[2] = "KIb";
-    /* noncompetitive inhibition */
-    } else if (strcmp(args->model, "noncompetitive") == 0) {
-        (*f) = noncompetitive;
-        *m = 3;
-        *nvars = 2;
-        pattern_data[0] = "S[ ]*=[ ]*(\\[[ ,.0-9eE-]*\\])";
-        pattern_data[1] = "I[ ]*=[ ]*(\\[[ ,.0-9eE-]*\\])";
-        params_name[0] = "Vmax";
-        params_name[1] = "Km"; 
-        params_name[2] = "KIb";
-    /* effect of the pH */
-    } else if (strcmp(args->model, "ph") == 0) {
-        (*f) = ph;
-        *m = 6; 
-        *nvars = 2;
-        pattern_data[0] = "S[ ]*=[ ]*(\\[[ ,.0-9eE-]*\\])";
-        pattern_data[1] = "H[ ]*=[ ]*(\\[[ ,.0-9eE-]*\\])";
-        params_name[0] = "Vmax";
-        params_name[1] = "Km";
-        params_name[2] = "Ka1";
-        params_name[3] = "Ka2";
-        params_name[4] = "Ka3";
-        params_name[5] = "Ka4";
-    /* michaelis + temperature */
-    } else if (strcmp(args->model, "michaelistemp") == 0) {
-        (*f) = michaelistemp;
-        *m = 4;
-        *nvars = 2;
-        pattern_data[0] = "S[ ]*=[ ]*(\\[[ ,.0-9eE-]*\\])";
-        pattern_data[1] = "T[ ]*=[ ]*(\\[[ ,.0-9eE-]*\\])";
-        params_name[0] = "Vmax";
-        params_name[1] = "Km";
-        params_name[2] = "Ea";
-        params_name[3] = "T1";
-    } else {
-        fprintf(stderr, "Error: unrecognized model name: \"%s\"\n", args->model);
-        return -1;
+  int i;
+  /* models is an array of struct model, defined in models.c
+   * end of models is defined by a struct model with all its elements set to
+   * zero / NULL
+   */
+  for (i = 0; models[i].function != NULL; i++) {
+    if (!strcmp(models[i].name, modelname)) {
+      return &(models[i]);
     }
-    /* Create pattern (pattern_params) to search for every parameter */
-    for (i = 0; i < *m; i++)
-        asprintf(&pattern_params[i], "%s%s", params_name[i], "[ ]*=[ ]*[.0-9eE-]*");
-
-    /* build matrix of independent variables values */
-    for (i = 0; i < *nvars; i++) {
-        if (regcomp(&regex, pattern_data[i], REG_EXTENDED)) {
-            fprintf(stderr, "Error: Could not compile regex\n");
-            exit(1);
-        }
-        if (regexec(&regex, args->data, 1, pmatch, 0)) {
-            fprintf(stderr, "Error: Could not find all the independent variables.\n");
-            exit(1);
-        }
-        strcopy(data, args->data, pmatch[0].rm_so, pmatch[0].rm_eo);
-        regfree(&regex);
-        if((n[i] = array_length(data)) < 0)
-            return -1;
-
-        S[i] = malloc((n[i]+1) * sizeof(double));
-        if (parse_array(S[i], n[i], data) < 0)
-            return -1;
-    }
-    i = n[0];
-    for (j = 1; j < *nvars; j++) {
-        if (n[j] != i) {
-            fprintf(stderr, "Error: the number of values is not equal for all the independent variables\n");
-            return -1;
-        }
-    }
-    /* obtain parameters, and the guess of the parameters */
-    if (args->guess == NULL) {
-        args->guess = args->params;
-    }
-    for (i = 0; i < *m; i++) {
-        /* Compile regular expression */
-        if (regcomp(&regex, pattern_params[i], REG_EXTENDED)) {
-            fprintf(stderr, "Error: Could not compile regex\n");
-            return -1;
-        }
-        /* Extract first parameter, save it into "data" */
-        if (regexec(&regex, args->params, 1, pmatch, 0)) {
-            fprintf(stderr, "Error: Could not find all the parameters.\nThis model uses the following parameters:  ");
-            for (i = 0; i < *m; i++)
-                printf("%s%s", params_name[i], i == *m - 1 ? "\n" : ", ");
-            return -1;
-        }
-        strcopy(data, args->params, pmatch[0].rm_so, pmatch[0].rm_eo);
-        /* Extract first parameter guess, save it into "data" */
-        if (regexec(&regex, args->guess, 1, pmatch, 0)) {
-            fprintf(stderr, "Error: Could not find all the parameters guesses.\nThis model uses the following parameters:");
-            for (i = 0; i < *m; i++)
-                printf("%s%s", params_name[i], i == *m - 1 ? "\n" : ", ");
-            return -1;
-        }
-        strcopy(data2, args->guess, pmatch[0].rm_so, pmatch[0].rm_eo);
-        regfree(&regex);
-        /* Check for fixed parameters */
-        if (args->fixed_params != NULL) {
-            regcomp(&regex, params_name[i], REG_EXTENDED);
-            if (regexec(&regex, args->fixed_params, 0, 0, 0))
-                fit[i] = 1;
-            else
-                fit[i] = 0;
-            regfree(&regex);
-        } else {
-            fit[i] = 1;
-        }
-        /* Extract the value of the parameter */
-        if (regcomp(&regex, "[0-9.]*$", REG_EXTENDED)) {
-            fprintf(stderr, "Error: Could not compile regex\n");
-            return -1;
-        }
-        if (regexec(&regex, data, 1, pmatch, 0)) {
-            fprintf(stderr, "Error: Could not find the value of all the parameters.");
-            return -1;
-        }
-        strcopy(data, data, pmatch[0].rm_so, pmatch[0].rm_eo);
-        /* Extract the value of the parameter guess */
-        if (regexec(&regex, data2, 1, pmatch, 0)) {
-            fprintf(stderr, "Error: Could not find the value of all the parameters guesses");
-            return -1;
-        }
-        strcopy(data2, data2, pmatch[0].rm_so, pmatch[0].rm_eo);
-        regfree(&regex);
-        /* Save value of first parameter and first guess*/
-        sscanf(data, "%lf", &params[i]);
-        sscanf(data2, "%lf", &guess[i]);
-    }
-    return n[0];
-
+  }
+  return NULL;
 }

@@ -28,13 +28,11 @@ struct arguments {
 };
 
 /* Program modes */
-int run_interactive_mode(struct arguments *);
-int run_graphical_mode(struct arguments *);
-int run_normal_mode(struct arguments *);
+int run_cli_mode(struct arguments *);
+int run_file_mode(struct arguments *);
+int create_template(char *modelname, char *fileout);
 
-/* Internal stuff */
-int parse_str(char *regex_str, char *line, char *dst);
-int parse_array(double *S_arr, int n, char S_str[]);
-int strcopy(char *dst, char *src, int start, int end);
+/* Internal functions */
+struct model *get_model(char *modelname);
 
 #endif /* __ENZMC_H__ */

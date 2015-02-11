@@ -1,9 +1,9 @@
 #include "models.h"
-
 #include "enzyme.h"
 #include "enzyme.c"
 
-/* How to implement a model? 
+/* How to implement a model?
+ *
  * 1. In enzyme.c, define your function
  * 2. In enzyme.h, add the function prototype
  * 3. Here, add a new entry defining the name, name of the function
@@ -17,18 +17,12 @@
  *
  * #include "phisics.h"
  * #include "phisics.c"
+ *
+ * IMPORTANT: leave the last "model" as is: it is used to recognized the end of
+ * the array of models. Modifying it will break the program
  */
 
-struct model {
-  char *name;                                  // name of the model
-  double (*function) (double X[], double p[]); // function (ex. see enzyme.h)
-  int nparams;                                 // number of parameters
-  int nvars;                                   // number of indep vars
-  char *params[MAX_PARAMS];                    // names of the parameters
-  char *indep_vars[MAX_INDEP];                 // names of the indep vars
-};
-
-struct model models[10] = {
+struct model models[] = {
   {
     "michaelis",
     michaelis,
@@ -100,5 +94,13 @@ struct model models[10] = {
     2,
     {"Ea", "Km", "T1"},
     {"S", "T"}
+  },
+  {
+    "",
+    NULL,
+    0,
+    0,
+    {},
+    {}
   }
 };
