@@ -1,5 +1,4 @@
 #include "enzyme.h"
-#include <stdio.h>
 #include <math.h>
 
 /* For an explanation of the models, please refer to the header file */

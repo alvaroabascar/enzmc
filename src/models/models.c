@@ -1,11 +1,23 @@
-#include <stdlib.h>
-#ifndef _ENZYME_
-#include "enzyme.h"
-#endif
-
-#ifndef _MODELS_
 #include "models.h"
-#endif
+
+#include "enzyme.h"
+#include "enzyme.c"
+
+/* How to implement a model? 
+ * 1. In enzyme.c, define your function
+ * 2. In enzyme.h, add the function prototype
+ * 3. Here, add a new entry defining the name, name of the function
+ * (as in enzyme.c), num of parameters and indep variables, names of the
+ * parameters and name of the independent variables.
+ *
+ * NOTE: enzyme.c and enzyme.h contain enzymatic models. If you want to include
+ * models from a field not related to enzymology, you might want to create a
+ * couple of files: e.g. phisics.h and phisics.c and place your functions there.
+ * Then just include them at the top of this file as follows:
+ *
+ * #include "phisics.h"
+ * #include "phisics.c"
+ */
 
 struct model {
   char *name;                                  // name of the model

@@ -5,10 +5,11 @@
 #include <string.h>
 #include <math.h>
 #include <regex.h>
+#include <enzmc.h>
 #include "include/montecarlo.h"
 #include "include/enzyme.h"
-#include "include/models.h"
 #include "include/enzmc.h"
+#include "include/models.h"
 
 /* MAX_INDEP, MAX_DATA_CHARS, MAX_PARAMS in models.h */
 #define NREPS 10000
@@ -32,12 +33,6 @@ static int parse_opt(int key, char *arg, struct argp_state *state)
     struct arguments *args = state->input;
     static nargs = 0;
     switch(key) {
-        case 'I':
-            args->mode = INTERACTIVE_MODE;
-            break;
-        case 'G':
-            args->mode = GRAPHICAL_MODE;
-            break;
         case 'f':
             args->mode = FILE_MODE;
             args->fileinput = arg;
@@ -92,10 +87,8 @@ int main(int argc, char *argv[])
   int result;
   struct argp_option options[] = {
     {0, 0, 0, 0, "Other program modes:", 1},
-    {"interactive", 'I', 0, 0, "Enter interactive mode"},
     {"template", 't', "model", 0, "Create a template for the specified model"},
     {"file", 'f', "input file", 0, "Get input from file"},
-    {"graphical", 'G', 0, OPTION_HIDDEN, "Enter graphical mode"},
     {0, 0, 0, 0, "Mandatory parameters:", 2},
     {"model", 444, "\"model name\"", 0, "Choose a model"},
     {"params", 555, "\"Vm=5 Km=17\"", 0, "Set the parameters of the model"},
@@ -126,12 +119,6 @@ int main(int argc, char *argv[])
      * create a simple API to contain the modes?
      * *******************************************/
     switch(args.mode) {
-    case INTERACTIVE_MODE:
-        result = run_interactive_mode(&args);
-        break;
-    case GRAPHICAL_MODE:
-        result = run_graphical_mode(&args);
-        break;
     case NORMAL_MODE:
         result = run_normal_mode(&args);
         break;
@@ -205,147 +192,49 @@ int create_template(char *model, char *filename)
     fprintf(fp, "- Error (absolute):");
 }
 
-
-int run_interactive_mode(struct arguments *args)
-{
-    char tmp[10];
-    struct arguments newargs;
-    newargs.model = malloc(100 * sizeof(char));
-    newargs.data = malloc(MAX_DATA_CHARS * sizeof(char));
-    newargs.params = malloc(100 * sizeof(char));
-    newargs.guess = malloc(100 * sizeof(char));
-    newargs.error = malloc(100 * sizeof(char));
-    newargs.fixed_params = malloc(100 * sizeof(char));
-    if (args->model == NULL) {
-        printf("Enter the name of the model (e.g. \"michaelis\")\n>> ");
-        fgets(newargs.model, 100, stdin);
-    } else {
-        newargs.model = args->model;
-    }
-    if (args->data == NULL) {
-        printf("Enter the independent variables (e.g. S=[1,2,3] I=[1.5,2,4])\n>> ");
-        fgets(newargs.data, MAX_DATA_CHARS, stdin);
-    } else {
-        newargs.data = args->data;
-    }
-
-    if (args->params == NULL) {
-        printf("Enter the parameters (e.g. Km=5.5 Vmax=32.1)\n>> ");
-        fgets(newargs.params, 100, stdin);
-    } else {
-        newargs.params = args->params;
-    }
-
-    if (args->error == NULL) {
-        printf("Enter an estimation of the error (absolute value)\n>> ");
-        fgets(newargs.error, 100, stdin);
-    } else {
-        newargs.error = args->error;
-    }
-
-    if (args->guess == NULL) {
-        printf("Do you want to use the value of the parameters as the initial guess (P), or to provide a new guess (N)?\n>> [P/n] ");
-        fgets(tmp, 10, stdin);
-        if (!(strcmp(tmp, "n\n") || strcmp(tmp, "N\n"))) {
-            printf("Enter the guess (e.g. Km=5 Vmax=20\n)>> ");
-            fgets(newargs.guess, 100, stdin);
-        } else {
-            newargs.guess = newargs.params;
-        }
-    } else {
-        newargs.guess = args->guess;
-    }
-
-    if (args->fixed_params == NULL) {
-        printf("Enter the parameters that you wish to keep fixed, or nothing if you want to fit all of them\n>> ");
-        fgets(newargs.fixed_params, 100, stdin);
-    } else {
-        newargs.fixed_params = args->fixed_params;
-    }
-    return run_normal_mode(&newargs);
-}
-
-int run_graphical_mode(struct arguments *args)
-{
-    printf("Oops! I hope this was already available\n");
-    return -1;
-}
-
 int run_file_mode(struct arguments *args)
 {
-    char model[20], data[MAX_DATA_CHARS], params[100], fixed[100], error[10];
+    char model[20], data[MAX_DATA_CHARS];
+    char params[MAX_PARAMS], fixed[MAX_PARAMS], error[10];
     char *line = malloc(sizeof(char) * MAX_DATA_CHARS);
-    char *strtmp = malloc(sizeof(char) * MAX_DATA_CHARS);
     size_t nbytes = MAX_DATA_CHARS;
+    FILE *fp;
+
     regex_t regex;
     regmatch_t pmatch[1];
-    FILE *fp = fopen(args->fileinput, "r");
 
-    if (fp == NULL) {
-        fprintf(stderr, "Error: could not open input file %s.\n", args->fileinput);
+    if (! (fp = fopen(args->fileinput, "r"))) {
+        fprintf(stderr, "Error: could not open input file %s.\n",
+                args->fileinput);
         return -1;
     }
 
-    /* model name */
+    /* get model name */
     getline(&line, &nbytes, fp);
-    regcomp(&regex, "[a-zA-Z]*\n", REG_EXTENDED);
-    if (regexec(&regex, line, 1, pmatch, 0)) {
+    if (! parse_str("[a-zA-Z]*\n", line, model)) {
         fprintf(stderr, "Error: Could not find model name.\n");
         exit(1);
     }
-    strcopy(model, line, pmatch[0].rm_so, pmatch[0].rm_eo - 1);
-    strtmp[0] = '\0';
-    /* independent variables */
-    /* jump to location of independent variables */
-    do {
-        getline(&line, &nbytes, fp);
-    } while (strcmp(line, "\n") == 0 || strcmp(line, "- Independent variables:\n") == 0);
 
-    regcomp(&regex, "[a-zA-Z]*[ ]*=[ ]*[[0-9eE., -]*]\n", REG_EXTENDED);
-    while (!regexec(&regex, line, 1, pmatch, 0)) {
-        sprintf(data, "%s%s", strtmp, line);
-        strcpy(strtmp, data);
-        if (!getline(&line, &nbytes, fp))
-            break;
-    }
-    /* parameters */
-    /* jump to parameters */
-    do {
-        getline(&line, &nbytes, fp);
-    } while (strcmp(line, "\n") == 0 || strcmp(line, "- Parameters:\n") == 0);
+    /* parse input file, according to model requirements (independent variables,
+     * parameters, fixed parameters, errors...
+     */
 
-    regcomp(&regex, "[a-zA-Z0-9]*[ ]*=[ ]*[0-9eE.-]*\n", REG_EXTENDED);
-    strtmp[0] = '\0';
-    while (!regexec(&regex, line, 1, pmatch, 0)) {
-        sprintf(params, "%s%s", strtmp, line);
-        strcpy(strtmp, params);
-        if (!getline(&line, &nbytes, fp))
-            break;
-    }
-    /* fixed parameters */
-    do {
-        getline(&line, &nbytes, fp);
-    } while (strcmp(line, "\n") == 0);
 
-    regcomp(&regex, "[0-9a-zA-Z ]*\n", REG_EXTENDED);
-    regexec(&regex, line, 1, pmatch, 0);
-    strcopy(fixed, line, pmatch[0].rm_so, pmatch[0].rm_eo - 1);
-    /* error */
-    do {
-        getline(&line, &nbytes, fp);
-    } while (strcmp(line, "\n") == 0);
-    getline(&line, &nbytes, fp);
+    /* do stuff... */
 
-    regcomp(&regex, "[0-9eE. -]*\n", REG_EXTENDED);
-    regexec(&regex, line, 1, pmatch, 0);
-    strcopy(error, line, pmatch[0].rm_so, pmatch[0].rm_eo - 1);
-    free(line);
-    free(strtmp);
+    /* Place the user input ina structure "args" and just call run_normal_mode,
+     * (the same function which parses command line data). It will care about
+     * the rest!
+     */
     args->model = model;
     args->data = data;
-    args->fixed_params = (strcmp(fixed, "") == 0) ? NULL : fixed;
+    args->fixed_params = !strcmp(fixed, "") ? NULL : fixed;
     args->error = error;
     args->params = params;
+
+    /* Clean up */
+    free(line);
     return run_normal_mode(args);
 }
 
@@ -373,11 +262,8 @@ int run_normal_mode(struct arguments *args)
         printf("Fixed parameters: %s\n", args->fixed_params);
         printf("Guess: %s\n", args->guess ? args->guess : args->params);
         printf("Error: %s\n", args->error);
-        printf("Data: %s\n", args->data);
-        printf("\n");
-    } else {
-        printf("Data: %s\n", args->data);
     }
+    printf("Data: %s\n\n", args->data);
 
     if ((error = atof(args->error)) == 0) {
         fprintf(stderr, "Error: \"error\" must be a numeric value > 0\n");
@@ -661,79 +547,4 @@ int parse_data(struct arguments *args, double *S[], int *nvars, int *m,
     }
     return n[0];
 
-}
-
-/* checks how many elements has the array represented by the string S */
-int array_length(char *S)
-{
-    char c, *S2 = S;
-    double w;
-    int i = 0, j = 0;
-    /* first number */
-    while (!sscanf(S2, "[%e", &w)) {
-        if (S2[0] == '\0') {
-            fprintf(stderr, "Error in array of substrate concentrations\n");
-            return -1;
-        }
-        S2++;
-    }
-    i++;
-    /* jump comma */
-    while (S2[0] != '\0') {
-        for (c = *(S+j); c != ',' && c != '\0' && c != ' '; c = *(S+j)) {
-            j++;
-        }
-        if (c == '\0')
-            break;
-        j++;
-        S2 = S+j;
-        if (sscanf(S2, "%e,", &w))
-            i++;
-    }
-    /* last number */
-    if (sscanf(S, "%e]", &w))
-        i++;
-    return i;
-}
-
-/* parses the "nvars" strings in ... and saves the values in S_arr */
-int parse_array(double *S_arr, int n, char *S)
-{
-    char c, *S2;
-    int i = 0, j = 0;
-    S2 = S;
-    while (!sscanf(S2, "[%lf", &S_arr[i])) {
-        if (S2[0] == '\0') {
-            fprintf(stderr, "Error in array of substrate concentrations\n");
-            return -1;
-        }
-        S2++;
-    }
-    i++;
-    /* jump comma */
-    while (S2[0] != '\0') {
-        for (c = *(S+j); c != ',' && c != '\0' && c != ' '; c = *(S+j)) {
-            j++;
-        }
-        if (c == '\0')
-            break;
-        j++;
-        S2 = S+j;
-        if (sscanf(S2, "%lf,", &S_arr[i]))
-            i++;
-    }
-    /* last number */
-    if (sscanf(S, "%lf]", &S_arr[i]))
-        i++;
-    return i;
-}
-
-int strcopy(char *dst, char *src, int off, int end)
-{
-    int i;
-    for (i = 0; i + off < end; i++) {
-        dst[i] = src[i+off];
-    }
-    dst[i] = '\0';
-    return i;
 }

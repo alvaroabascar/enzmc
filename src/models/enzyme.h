@@ -1,4 +1,5 @@
-#ifndef _MICHAELIS_
+#ifndef __MICHAELIS_H__
+#define __MICHAELIS_H__
 
 double michaelis(double S[1], double p[2]);
 /* Michaelis-Menten
@@ -179,4 +180,4 @@ double michaelis_inactiv(double X[2], double p[3]);
  *           p[3] -> {vmax, Km, kt} (kt = first order inactivation rate constant
  */
 
-#endif
+#endif /* __MICHAELIS_H__ */
