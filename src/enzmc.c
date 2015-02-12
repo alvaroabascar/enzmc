@@ -152,12 +152,15 @@ int run_cli_mode(struct arguments *args)
   double means[model->nparams];
   double variances[model->nparams];
 
+  /* parse data passed in the --data option (values of the indep variables) */
+  get_indep_vars(model, args->data, data);
   printf("%s\n", model->name);
   /*
-  montecarlo(model.function, params, params, error, NREPS, npoints, model.nvars,
-             model.nparams, mfit, fixed_params_ptr, data, means, variances,
-             NULL);
+  montecarlo(model.function, params, params, error, NREPS, npoints,
+             model->nvars, model->nparams, mfit, fixed_params_ptr, data,
+             means, variances, NULL);
    */
+  free_array_double(data, model->nvars);
   return -1;
 }
 
@@ -187,4 +190,115 @@ struct model *get_model(char *modelname)
     }
   }
   return NULL;
+}
+
+/* Given a struct model and raw data as a string, parse this string and place
+ * the values of the independent variables in a matrix. A reference to this
+ * matrix must be passed as third element.
+ * 
+ * eg. of raw data: a string with the format   "S=[1,2,3,4,5,6] I=[2,2,4,4,5,5]"
+ * eg. of output:   array of arrays type double { {1,2,3,4,5,6}, {2,2,4,4,5,5} }
+ *
+ * returns: 0 on success
+ *         -1 on failure (not all indep variables of the model have been found
+ *                        in the data)
+ */
+int get_indep_vars(struct model *model, char *raw_data,
+                   double *data[model->nvars])
+{
+  int i;
+  /* simple regexp which will match a string of type:
+   * Param = [1, 2, 3, 4, 5, 6, 7], accepting commas, spaces and numbers either
+   * in decimal or exponential notation
+   */
+  char *regexp_base = "%s[ ]*=[ ]*[[eE., [:digit:]-]+]";
+  char regexp_complete[40];
+  char match_str[200]; // will store the matched string
+  /* for each independent variable in the model... */
+  for (i = 0; i < model->nvars; i++) {
+    /* build the full regex and compile it */
+    sprintf(regexp_complete, regexp_base, model->indep_vars[i]);
+    if (extract_str(raw_data, match_str, regexp_complete)) {
+      fprintf(stderr, "Error: variable %s is required by the model %s, but it was not found.\n", model->indep_vars[i], model->name);
+      return -1;
+    }
+    printf("%s\n", match_str);
+    data[i] = parse_array_double(match_str);
+  }
+  return 0;
+}
+
+/* Given a source and destiny string, and a regular expression, match the
+ * regular expression in the source string and save the matched region in the
+ * destiny string.
+ */
+int extract_str(char *src, char *dst, char *regexp_str)
+{
+  size_t nchars; // to be used later
+  regex_t regex;
+  regmatch_t pmatch[1];
+  regcomp(&regex, regexp_str, REG_EXTENDED);
+  /* if didn't match... */
+  if (regexec(&regex, src, 1, pmatch, 0)) {
+    return -1;
+  }
+  /* copy the matched string to the destiny string. pmatch[0].rm_so contains the
+   * starting position of the match, pmatch[0].rm_eo the ending position. So we
+   * copy (rm_eo - rm_so) chars from the string starting at rm_so.
+   */
+  nchars = pmatch[0].rm_eo - pmatch[0].rm_so;
+  strncpy(dst, &src[pmatch[0].rm_so], nchars);
+  dst[nchars] = '\0'; // end string!
+  return 0;
+}
+
+/* Given a string in format [1,2,3,3,5.6, 3.2], return a pointer to an array
+ * with this numbers as doubles. Numbers might be separated by commas or spaces,
+ * and exponential notation is accepted as well as decimal notation.
+ *
+ * The array might be preceded or followed by something else (eg. "A = [1,2,3]")
+ * In this case the function will consider as array the first match of a set of
+ * numbers between brackets.
+ */
+double *parse_array_double(char *array_raw)
+{
+  int i;
+  char *token;
+  double *result;
+  /* set result_tmp to maximum possible size */
+  double *result_tmp = malloc(MAX_VALUES * sizeof(double));
+  /* first step: clean the array, leave only the digits + brackets */
+  char array_clean[100];
+  if (extract_str(array_raw, array_clean, "\[[eE., [:digit:]-]+]")) {
+    return NULL;
+  }
+  /* part 2: turn it into double array */
+  /* tokenize by commas, spaces and brackets (we remove brackets this way) */
+  token = strtok(array_clean, ", []");
+  for (i = 0; token; i++) {
+    result_tmp[i] = atof(token);
+    token = strtok(NULL, ", []");
+  }
+
+  /* now copy the array to result, using the minimum required space */
+  result = malloc(i * sizeof(double));
+  copy_array_double(result, result_tmp, i);
+  /* now free result_tmp, which was (probably) excesively large */
+  free(result_tmp);
+  return result;
+}
+
+void free_array_double(double *array[], int n)
+{
+  int i;
+  for (i = 0; i < n; i++) {
+    free(array[i]);
+  }
+}
+
+/* Copy n elements from src to dst */
+void copy_array_double(double *dst, double *src, int n)
+{
+  while (--n >= 0)
+    dst[n] = src[n];
 }

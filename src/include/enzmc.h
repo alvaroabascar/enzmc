@@ -1,7 +1,11 @@
 #ifndef __ENZMC_H__
 #define __ENZMC_H__
 
+#include <models.h>
+
 /* Stuff directly related to the implementation of the cli */
+
+#define MAX_VALUES 200
 
 /* program modes */
 #define NORMAL_MODE 52
@@ -34,5 +38,11 @@ int create_template(char *modelname, char *fileout);
 
 /* Internal functions */
 struct model *get_model(char *modelname);
+int get_indep_vars(struct model *model, char *raw_data,
+                   double *data[model->nvars]);
+int extract_str(char *src, char *dst, char *regexp_str);
+double *parse_array_double(char *array_str);
 
+void free_array_double(double *array[], int n);
+void copy_array_double(double *dst, double *src, int n);
 #endif /* __ENZMC_H__ */
