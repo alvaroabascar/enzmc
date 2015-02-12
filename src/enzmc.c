@@ -20,7 +20,7 @@ const char *argp_program_version = "version 1.0";
 static int parse_opt(int key, char *arg, struct argp_state *state)
 {
     struct arguments *args = state->input;
-    static nargs = 0;
+    static int nargs = 0;
     switch(key) {
         case 'f':
             args->mode = FILE_MODE;
@@ -143,8 +143,8 @@ int run_cli_mode(struct arguments *args)
   double error;
   /* Number of points (num of values of the each variable). */
   int npoints;
-  /* Number of parameters to fit */
-  int mfit;
+  /* Number of parameters to fit or keep fixed */
+  int nfit, nfix;
   /* Means and variacnes of the adjusted parameters */
   double means[model->nparams];
   double variances[model->nparams];
@@ -152,23 +152,26 @@ int run_cli_mode(struct arguments *args)
   /* parse data passed in the --data option (values of the indep variables), and
    * put it into the matrix "data"
    */
-  if (ret_code = get_indep_vars(model, args->data, data))
-    return ret_code;
+  if ((npoints = get_indep_vars(model, args->data, data)) < 0)
+    return npoints;
   /* parse parameters and place them in the array params */
-  if (ret_code = get_params(model, args->params, params))
+  if ((ret_code = get_params(model, args->params, params)))
     return ret_code;
   /* parse error term */
-  if (ret_code = get_error(model, args->error, &error))
+  if ((ret_code = get_error(model, args->error, &error)))
     return ret_code;
   /* parse the fixed parameters */
-  get_fixed_params(model, args->fixed_params, fixed_params);
+  if ((nfix = get_fixed_params(model, args->fixed_params, fixed_params)) < 0) {
+    return nfix;
+  }
+  nfit = model->nparams - nfix;
   printf("%s\n", model->name);
-  /*
+  printf("parameters to fix: %d\n", nfix);
+
   montecarlo(model->function, params, params, error, NREPS, npoints,
-             model->nvars, model->nparams, mfit, fixed_params_ptr, data,
+             model->nvars, model->nparams, nfit, fixed_params_ptr, data,
              means, variances, NULL);
-   */
-  free_array_double(data, model->nvars);
+  free_matrix_double(data, model->nvars);
   return -1;
 }
 
@@ -217,7 +220,7 @@ struct model *get_model(char *modelname)
 int get_indep_vars(struct model *model, char *raw_data,
                    double *data[model->nvars])
 {
-  int i;
+  int i, j, npoints, npoints_tmp;
   /* simple regexp which will match a string of type:
    * foo = [1, 2, 3, 4, 5, 6, 7], accepting commas, spaces and numbers either
    * in decimal or exponential notation
@@ -233,10 +236,19 @@ int get_indep_vars(struct model *model, char *raw_data,
       fprintf(stderr, "Error: variable %s is required by the model %s, but it was not found.\n", model->indep_vars[i], model->name);
       return -1;
     }
-    data[i] = parse_array_double(match_str);
-    /* check that all indep variables have the same number of values */
+    npoints = parse_array_double(match_str, &data[i]);
+    /* if indep variables have different number of values, cleanup and signal
+     * failure
+     */
+    if (i > 0 && (npoints != npoints_tmp)) {
+      for (j = 0; j < i; j++)
+        free(data[i]);
+      fprintf(stderr, "Error: the number of values is not equal for all the independent variables.\n");
+      return -2;
+    }
+    npoints_tmp = npoints;
   }
-  return 0;
+  return npoints;
 }
 
 /* Given a struct model and raw data as a string, parse this string to find the
@@ -287,26 +299,30 @@ int get_error(struct model *model, char *raw_data, double *error)
 }
 
 /* Given a model, and a string containing a list of parameters, find them and
- * fill the array pointed to by ptr in the following way:
+ * fill the array pointed to by ptr in the following way: 
  *
  * *ptr is an int array with the length of model->nparams (one entry for each
  * parameter). If a given entry is 1, the parameter will be fitted; if it is 0,
  * it will be kept fixed.
+ *
+ * return the number of parameters to keep fixed
  */
 int get_fixed_params(struct model *model, char *raw_data, int *ptr)
 {
   char str[100]; // useless but required by extract_str
-  int i;
+  int i, nfix;
   /* for each parameter of the model... */
   for (i = 0; i < model->nparams; i++) {
     /* can we match params[i]? if not, then params[i] is not in the string
      * raw_data, which means that it should be fited. If yes, then it should
      * be fixed
      */
-    if (extract_str(raw_data, str, model->params[i]))
+    if (extract_str(raw_data, str, model->params[i])) {
       ptr[i] = 1; // not found --> fit it
-    else
+    } else {
       ptr[i] = 0; // found --> fix it
+      nfix++;
+    }
   }
   return 0;
 }
@@ -335,44 +351,45 @@ int extract_str(char *src, char *dst, char *regexp_str)
   return 0;
 }
 
-/* Given a string in format [1,2,3,3,5.6, 3.2], return a pointer to an array
- * with this numbers as doubles. Numbers might be separated by commas or spaces,
+/* Given a string in format [1,2,3,3,5.6, 3.2], and a pointer to ptr to double,
+ * allocates space for a double array and fills it. Returns the number of
+ * elements placed in the array.
+ * 
+ * Numbers might be separated by commas or spaces,
  * and exponential notation is accepted as well as decimal notation.
- *
- * npoints becomes the size of the array
  *
  * The array might be preceded or followed by something else (eg. "A = [1,2,3]")
  * In this case the function will consider as array the first match of a set of
  * numbers between brackets.
  */
-double *parse_array_double(char *array_raw)
+int parse_array_double(char *array_raw, double **dst)
 {
-  int i;
+  int i, ndata;
   char *token;
-  double *result;
   /* set result_tmp to maximum possible size */
   double *result_tmp = malloc(MAX_VALUES * sizeof(double));
   /* first step: clean the array, leave only the digits + brackets */
   char array_clean[100];
   if (extract_str(array_raw, array_clean, "\[[eE., [:digit:]-]+]")) {
-    return NULL;
+    return -1;
   }
   /* part 2: turn it into double array */
   /* tokenize by commas, spaces and brackets (we remove brackets this way) */
   token = strtok(array_clean, ", []");
-  for (i = 0; token; i++) {
+  for (i = ndata = 0; token; i++) {
     result_tmp[i] = atof(token);
     token = strtok(NULL, ", []");
+    ndata++;
   }
 
-  result = malloc(i * sizeof(double));
-  copy_array_double(result, result_tmp, i);
+  *dst = malloc(ndata * sizeof(double));
+  copy_array_double(*dst, result_tmp, i);
   /* now free result_tmp, which was (probably) excesively large */
   free(result_tmp);
-  return result;
+  return ndata;
 }
 
-void free_array_double(double *array[], int n)
+void free_matrix_double(double *array[], int n)
 {
   int i;
   for (i = 0; i < n; i++) {

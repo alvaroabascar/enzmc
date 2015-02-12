@@ -1,7 +1,7 @@
-#define VERBOSE 0
-#ifndef __NLR__
-  #define __NLR__
+#ifndef __LVMRQ_H__
+#define __LVMRQ_H__
 
+#define VERBOSE 0
 double chisquare(int n, double yi[n], double yfit[n], double sig[n]);
 
 double lvmrq(
@@ -9,7 +9,7 @@ double lvmrq(
            int m,                       /* number of parameters */
            int mfit,                    /* number of parameters to adjust */
            int nvars,                   /* number of independent variables */
-           double xi[n][nvars],         /* data points */
+           double **xi,         /* data points */
            double yi[n],
            double a[m],                 /* parameters (guess) */
            int *fit[m],                 /* fit[i]=1 --> adjust a[i].
@@ -26,4 +26,5 @@ double lvmrq(
 void buildAlphaBeta(int n, int mfit, int lambda, double dyda[][mfit],
                     double alpha[mfit][mfit], double beta[mfit][1],
                     double sig[n], double yi[n], double yfit[n]);
-#endif
+
+#endif /* __LVMRQ_H__ */

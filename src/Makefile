@@ -1,4 +1,6 @@
-CFLAGS = -Iinclude/ -g
+BASE := $(shell dirname $(realpath $(lastword $(MAKEFILE_LIST))))
+
+CFLAGS = -Wall -g -I$(BASE)/include/
 
 LDLIBS = -lm
 

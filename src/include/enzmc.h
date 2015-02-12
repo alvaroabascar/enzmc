@@ -44,8 +44,8 @@ int get_error(struct model *model, char *raw_data, double *error);
 int get_fixed_params(struct model *model, char *raw_data, int *fixed_ptr);
 
 int extract_str(char *src, char *dst, char *regexp_str);
-double *parse_array_double(char *array_str);
+int parse_array_double(char *array_str, double **dst);
 
-void free_array_double(double *array[], int n);
+void free_matrix_double(double *array[], int n);
 void copy_array_double(double *dst, double *src, int n);
 #endif /* __ENZMC_H__ */

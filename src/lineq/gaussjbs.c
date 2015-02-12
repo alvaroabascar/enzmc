@@ -14,7 +14,7 @@
  */
 int gaussj(int n, int m, double A[][n], double B[][m])
 {
-    int i, j, k, row, col, max_row, max_col, itmp;
+    int i, j, k, row, max_row, max_col, itmp;
     int piv[n]; /* keeps track of column pivoting */
     double tmp; /* used to switch rows/cols */
     double max;
