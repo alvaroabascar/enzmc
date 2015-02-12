@@ -152,26 +152,19 @@ int run_cli_mode(struct arguments *args)
   /* parse data passed in the --data option (values of the indep variables), and
    * put it into the matrix "data"
    */
-  if (ret_code = get_indep_vars(model, args->data, data)) {
+  if (ret_code = get_indep_vars(model, args->data, data))
     return ret_code;
-  }
   /* parse parameters and place them in the array params */
-  if (ret_code = get_params(model, args->params, params)) {
+  if (ret_code = get_params(model, args->params, params))
     return ret_code;
-  }
   /* parse error term */
-  if (ret_code = get_error(model, args->error, &error)) {
+  if (ret_code = get_error(model, args->error, &error))
     return ret_code;
-  }
   /* parse the fixed parameters */
   get_fixed_params(model, args->fixed_params, fixed_params);
-  int i;
-  for (i = 0; i < model->nparams; i++) {
-    printf("%d%c", fixed_params[i], i == model->nparams-1 ? '\n' : ' ');
-  }
   printf("%s\n", model->name);
   /*
-  montecarlo(model.function, params, params, error, NREPS, npoints,
+  montecarlo(model->function, params, params, error, NREPS, npoints,
              model->nvars, model->nparams, mfit, fixed_params_ptr, data,
              means, variances, NULL);
    */
@@ -213,10 +206,13 @@ struct model *get_model(char *modelname)
  * 
  * eg. of raw data: a string with the format   "S=[1,2,3,4,5,6] I=[2,2,4,4,5,5]"
  * eg. of output:   array of arrays type double { {1,2,3,4,5,6}, {2,2,4,4,5,5} }
+ *                  length of the arrays (in int pointed to by npoints)
  *
  * returns: 0 on success
- *         -1 on failure (not all indep variables of the model have been found
- *                        in the data)
+ *         -1 on failure, if not all indep variables of the model have been
+ *                        found in the data
+ *         -2 on failure, if not all indep variables have the same number of
+ *                        values
  */
 int get_indep_vars(struct model *model, char *raw_data,
                    double *data[model->nvars])
@@ -238,6 +234,7 @@ int get_indep_vars(struct model *model, char *raw_data,
       return -1;
     }
     data[i] = parse_array_double(match_str);
+    /* check that all indep variables have the same number of values */
   }
   return 0;
 }
@@ -342,6 +339,8 @@ int extract_str(char *src, char *dst, char *regexp_str)
  * with this numbers as doubles. Numbers might be separated by commas or spaces,
  * and exponential notation is accepted as well as decimal notation.
  *
+ * npoints becomes the size of the array
+ *
  * The array might be preceded or followed by something else (eg. "A = [1,2,3]")
  * In this case the function will consider as array the first match of a set of
  * numbers between brackets.
@@ -366,7 +365,6 @@ double *parse_array_double(char *array_raw)
     token = strtok(NULL, ", []");
   }
 
-  /* now copy the array to result, using the minimum required space */
   result = malloc(i * sizeof(double));
   copy_array_double(result, result_tmp, i);
   /* now free result_tmp, which was (probably) excesively large */
