@@ -41,7 +41,7 @@ int get_indep_vars(struct model *model, char *raw_data,
                    double *data[model->nvars]);
 int get_params(struct model *model, char *raw_data, double *params);
 int get_error(struct model *model, char *raw_data, double *error);
-int get_fixed_params(struct model *model, char *raw_data, int *fixed_ptr[])
+int get_fixed_params(struct model *model, char *raw_data, int *fixed_ptr);
 
 
 int extract_str(char *src, char *dst, char *regexp_str);

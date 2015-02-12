@@ -88,13 +88,13 @@ int main(int argc, char *argv[])
   struct argp argp = {options, parse_opt, "OUTPUT_FILE"};
   struct arguments args = {
       .mode = NORMAL_MODE,
-      .model = NULL,
-      .params = NULL,
-      .fixed_params = NULL,
-      .error = NULL,
-      .data = NULL,
-      .fileoutput = NULL,
-      .fileinput = NULL,
+      .model = "",
+      .params = "",
+      .fixed_params = "",
+      .error = "",
+      .data = "",
+      .fileoutput = "",
+      .fileinput = "",
       .verbose = 0
     };
     argp_parse(&argp, argc, argv, 0, 0, &args);
@@ -137,7 +137,8 @@ int run_cli_mode(struct arguments *args)
   double params[model->nparams];
   /* Array to indicate the fixed/adjustable parameters. */
   int fixed_params[model->nparams];
-  int *fixed_params_ptr = fixed_params;
+  int **fixed_params_ptr;
+  *fixed_params_ptr = fixed_params;
   /* Standard deviation of the gaussian error. */
   double error;
   /* Number of points (num of values of the each variable). */
@@ -163,7 +164,11 @@ int run_cli_mode(struct arguments *args)
     return ret_code;
   }
   /* parse the fixed parameters */
-  /* get_fixed_params(model, args.fixed_params, fixed_params_ptr); */
+  get_fixed_params(model, args->fixed_params, fixed_params);
+  int i;
+  for (i = 0; i < model->nparams; i++) {
+    printf("%d%c", fixed_params[i], i == model->nparams-1 ? '\n' : ' ');
+  }
   printf("%s\n", model->name);
   /*
   montecarlo(model.function, params, params, error, NREPS, npoints,
@@ -176,12 +181,12 @@ int run_cli_mode(struct arguments *args)
 
 int run_file_mode(struct arguments *args)
 {
-
+  return 0;
 }
 
 int create_template(char *modelname, char *fileout)
 {
-
+  return 0;
 }
 
 /* Given the name of a model, return a ptr to the struct model with all the
@@ -291,22 +296,23 @@ int get_error(struct model *model, char *raw_data, double *error)
  * parameter). If a given entry is 1, the parameter will be fitted; if it is 0,
  * it will be kept fixed.
  */
-/* int get_fixed_params(struct model *model, char *raw_data, int *ptr[]) */
-/* { */
-/*   char str[10]; // useless but required by extract_str */
-/*   int i; */
-/*   #<{(| for each parameter of the model... |)}># */
-/*   for (i = 0; i < model->nparams; i++) { */
-/*     #<{(| can we match params[i]? if so, then params[i] is in the string raw_data, */
-/*      * which means that it should be fixed */
-/*      |)}># */
-/*     if (extract_str(raw_data, str, model->params[i])) */
-/*       ptr[i] = 0; */
-/*     else */
-/*       ptr[i] = 1; */
-/*   } */
-/*  */
-/* } */
+int get_fixed_params(struct model *model, char *raw_data, int *ptr)
+{
+  char str[100]; // useless but required by extract_str
+  int i;
+  /* for each parameter of the model... */
+  for (i = 0; i < model->nparams; i++) {
+    /* can we match params[i]? if not, then params[i] is not in the string
+     * raw_data, which means that it should be fited. If yes, then it should
+     * be fixed
+     */
+    if (extract_str(raw_data, str, model->params[i]))
+      ptr[i] = 1; // not found --> fit it
+    else
+      ptr[i] = 0; // found --> fix it
+  }
+  return 0;
+}
 
 /* Given a source and destiny string, and a regular expression, match the
  * regular expression in the source string and save the matched region in the
