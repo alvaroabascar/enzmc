@@ -45,9 +45,6 @@ static int parse_opt(int key, char *arg, struct argp_state *state)
         case 777: /* data points */
             args->data = arg;
             break;
-        case 888: /* guess of the parameters */
-            args->guess = arg;
-            break;
         case 999: /* parameters to fix */
             args->fixed_params = arg;
             break;
@@ -84,7 +81,6 @@ int main(int argc, char *argv[])
     {"error", 666, "error", 0, "Set the estimated measurement error (absolute value)"},
     {"data", 777, "\"X1=[0.3,0.45,0.6,...] X2=[0.1,0.2,0.4...]\"", 0, "Set the values of the independent variables"},
     {0, 0, 0, 0, "Optional parameters:", 3},
-    {"guess", 888, "\"Vm=4 Km=5\"", OPTION_HIDDEN, "Set the guess of the parameters"},
     {"fixed", 999, "\"Vm Kd\"", 0, "Indicate what parameters are fixed"},
     {0, 0, 0, 0, "Informational options:", -1},
     {"verbose", 'v', 0, 0, "Display arguments on output"},
@@ -95,7 +91,6 @@ int main(int argc, char *argv[])
       .model = NULL,
       .params = NULL,
       .fixed_params = NULL,
-      .guess = NULL,
       .error = NULL,
       .data = NULL,
       .fileoutput = NULL,
@@ -127,6 +122,7 @@ int main(int argc, char *argv[])
  */
 int run_cli_mode(struct arguments *args)
 {
+  int ret_code; // return code of each of the functions called */
   /* Retrieve the data related to this model, necessary to parse the input */
   struct model *model = get_model(args->model);
   if (!model) {
@@ -152,8 +148,22 @@ int run_cli_mode(struct arguments *args)
   double means[model->nparams];
   double variances[model->nparams];
 
-  /* parse data passed in the --data option (values of the indep variables) */
-  get_indep_vars(model, args->data, data);
+  /* parse data passed in the --data option (values of the indep variables), and
+   * put it into the matrix "data"
+   */
+  if (ret_code = get_indep_vars(model, args->data, data)) {
+    return ret_code;
+  }
+  /* parse parameters and place them in the array params */
+  if (ret_code = get_params(model, args->params, params)) {
+    return ret_code;
+  }
+  /* parse error term */
+  if (ret_code = get_error(model, args->error, &error)) {
+    return ret_code;
+  }
+  /* parse the fixed parameters */
+  /* get_fixed_params(model, args.fixed_params, fixed_params_ptr); */
   printf("%s\n", model->name);
   /*
   montecarlo(model.function, params, params, error, NREPS, npoints,
@@ -208,7 +218,7 @@ int get_indep_vars(struct model *model, char *raw_data,
 {
   int i;
   /* simple regexp which will match a string of type:
-   * Param = [1, 2, 3, 4, 5, 6, 7], accepting commas, spaces and numbers either
+   * foo = [1, 2, 3, 4, 5, 6, 7], accepting commas, spaces and numbers either
    * in decimal or exponential notation
    */
   char *regexp_base = "%s[ ]*=[ ]*[[eE., [:digit:]-]+]";
@@ -216,17 +226,87 @@ int get_indep_vars(struct model *model, char *raw_data,
   char match_str[200]; // will store the matched string
   /* for each independent variable in the model... */
   for (i = 0; i < model->nvars; i++) {
-    /* build the full regex and compile it */
+    /* build the full regex to match the ith indep. variable of the model */
     sprintf(regexp_complete, regexp_base, model->indep_vars[i]);
     if (extract_str(raw_data, match_str, regexp_complete)) {
       fprintf(stderr, "Error: variable %s is required by the model %s, but it was not found.\n", model->indep_vars[i], model->name);
       return -1;
     }
-    printf("%s\n", match_str);
     data[i] = parse_array_double(match_str);
   }
   return 0;
 }
+
+/* Given a struct model and raw data as a string, parse this string to find the
+ * values of the parameters of the model. An array of type double must be passed
+ * as third argument, in which the values of the parameters will be placed.
+ * 
+ * eg. of raw data: a string with the format   "Vm=[2,3,4,5,6] Km=[2,4,4,5,5]"
+ * eg. of output:   array of arrays type double { {2,3,4,5,6}, {2,4,4,5,5} }
+ *
+ * returns: 0 on success
+ *         -1 on failure (not all parameters of the model have been found
+ *                        in the data)
+ */
+int get_params(struct model *model, char *raw_data, double *params)
+{
+  /* simple regexp which will match a string of type foo = [1,3,4,5,6],
+   * accepting commas or spaces as separators, and numbers either in decimal or
+   * exponential notation
+   */
+  char *regexp_base = "%s[ ]*=[ ]*[eE.[:digit:]-]+";
+  char regexp_complete[40];
+  char match_str[200];
+  int i;
+  /* for each parameter in the model... */
+  for (i = 0; i < model->nparams; i++) {
+    /* build the full regex to match the ith parameter of the model */
+    sprintf(regexp_complete, regexp_base, model->params[i]);
+    if (extract_str(raw_data, match_str, regexp_complete)) {
+      fprintf(stderr, "Error: parameter %s is required by the model %s, but it was not found.\n", model->params[i], model->name);
+      return -1;
+    }
+    /* place the number in the correct place of the array params */
+    sscanf(match_str, "%*[^0-9]%lf", &params[i]);
+  }
+  return 0;
+}
+
+/* Given a model, and a string containing the error, find the value
+ * and store it in error (double)
+ */
+int get_error(struct model *model, char *raw_data, double *error)
+{
+  int d = sscanf(raw_data, "%lf", error);
+  if (d != 1) {
+    return -1;
+  }
+  return 0;
+}
+
+/* Given a model, and a string containing a list of parameters, find them and
+ * fill the array pointed to by ptr in the following way:
+ *
+ * *ptr is an int array with the length of model->nparams (one entry for each
+ * parameter). If a given entry is 1, the parameter will be fitted; if it is 0,
+ * it will be kept fixed.
+ */
+/* int get_fixed_params(struct model *model, char *raw_data, int *ptr[]) */
+/* { */
+/*   char str[10]; // useless but required by extract_str */
+/*   int i; */
+/*   #<{(| for each parameter of the model... |)}># */
+/*   for (i = 0; i < model->nparams; i++) { */
+/*     #<{(| can we match params[i]? if so, then params[i] is in the string raw_data, */
+/*      * which means that it should be fixed */
+/*      |)}># */
+/*     if (extract_str(raw_data, str, model->params[i])) */
+/*       ptr[i] = 0; */
+/*     else */
+/*       ptr[i] = 1; */
+/*   } */
+/*  */
+/* } */
 
 /* Given a source and destiny string, and a regular expression, match the
  * regular expression in the source string and save the matched region in the

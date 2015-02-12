@@ -24,7 +24,6 @@ struct arguments {
   char *model;
   char *params;
   char *fixed_params;
-  char *guess;
   char *data;
   char *error;
   char *fileoutput;
@@ -40,6 +39,11 @@ int create_template(char *modelname, char *fileout);
 struct model *get_model(char *modelname);
 int get_indep_vars(struct model *model, char *raw_data,
                    double *data[model->nvars]);
+int get_params(struct model *model, char *raw_data, double *params);
+int get_error(struct model *model, char *raw_data, double *error);
+int get_fixed_params(struct model *model, char *raw_data, int *fixed_ptr[])
+
+
 int extract_str(char *src, char *dst, char *regexp_str);
 double *parse_array_double(char *array_str);
 
