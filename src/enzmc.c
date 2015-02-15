@@ -132,13 +132,11 @@ int run_cli_mode(struct arguments *args)
   /* Array to store the arrays of values for the independent variables. nvars
    * is the number of independent variables of the model.
    */
-  double *data[model->nvars];
+  double **data;
   /* Array to hold the values of the parameters. */
   double params[model->nparams];
   /* Array to indicate the fixed/adjustable parameters. */
   int fixed_params[model->nparams];
-  int **fixed_params_ptr;
-  *fixed_params_ptr = fixed_params;
   /* Standard deviation of the gaussian error. */
   double error;
   /* Number of points (num of values of the each variable). */
@@ -165,13 +163,16 @@ int run_cli_mode(struct arguments *args)
     return nfix;
   }
   nfit = model->nparams - nfix;
-  printf("%s\n", model->name);
-  printf("parameters to fix: %d\n", nfix);
+  /* This will store the same data as "data", but in an order understood by
+   * montecarlo
+   */
+  double data_ord[model->nvars][npoints];
+  reorder_data(model->nvars, npoints, data, data_ord);
+  free_matrix_double(&data, model->nvars);
 
   montecarlo(model->function, params, params, error, NREPS, npoints,
-             model->nvars, model->nparams, nfit, fixed_params_ptr, data,
+             model->nvars, model->nparams, nfit, fixed_params, data_ord,
              means, variances, NULL);
-  free_matrix_double(data, model->nvars);
   return -1;
 }
 
@@ -220,7 +221,7 @@ struct model *get_model(char *modelname)
 int get_indep_vars(struct model *model, char *raw_data,
                    double *data[model->nvars])
 {
-  int i, j, npoints, npoints_tmp;
+  int i, npoints, npoints_tmp;
   /* simple regexp which will match a string of type:
    * foo = [1, 2, 3, 4, 5, 6, 7], accepting commas, spaces and numbers either
    * in decimal or exponential notation
@@ -236,13 +237,12 @@ int get_indep_vars(struct model *model, char *raw_data,
       fprintf(stderr, "Error: variable %s is required by the model %s, but it was not found.\n", model->indep_vars[i], model->name);
       return -1;
     }
-    npoints = parse_array_double(match_str, &data[i]);
+    npoints = parse_array_double(match_str, data[i]);
     /* if indep variables have different number of values, cleanup and signal
      * failure
      */
     if (i > 0 && (npoints != npoints_tmp)) {
-      for (j = 0; j < i; j++)
-        free(data[i]);
+      free_matrix_double(&data, i);
       fprintf(stderr, "Error: the number of values is not equal for all the independent variables.\n");
       return -2;
     }
@@ -362,7 +362,7 @@ int extract_str(char *src, char *dst, char *regexp_str)
  * In this case the function will consider as array the first match of a set of
  * numbers between brackets.
  */
-int parse_array_double(char *array_raw, double **dst)
+int parse_array_double(char *array_raw, double *dst)
 {
   int i, ndata;
   char *token;
@@ -382,18 +382,36 @@ int parse_array_double(char *array_raw, double **dst)
     ndata++;
   }
 
-  *dst = malloc(ndata * sizeof(double));
-  copy_array_double(*dst, result_tmp, i);
+  dst = malloc(ndata * sizeof(double));
+  copy_array_double(dst, result_tmp, i);
   /* now free result_tmp, which was (probably) excesively large */
   free(result_tmp);
   return ndata;
 }
 
-void free_matrix_double(double *array[], int n)
+/* The data points are first obtained as a matrix data[nvars][npoints] (this is
+ * the easiest way to parse the data provided by the user). However, the current
+ * nonlinear regression algorithm requires the data to be stored as:
+ * data[npoints][nvars]. This function fills a matrix with this new order.
+ */
+void reorder_data(int nvars, int npoints, double *data[],
+                  double data_ord[][npoints])
+{
+  int var, point;
+  for (var = 0; var < nvars; var++) {
+    for (point = 0; point < npoints; point++) {
+      data_ord[point][var] = data[var][point];
+    }
+  }
+}
+
+void free_matrix_double(double **array[], int n)
 {
   int i;
   for (i = 0; i < n; i++) {
-    free(array[i]);
+    printf("freeing position %p", *array[i]);
+    free(*array[i]);
+    printf(" OK\n");
   }
 }
 

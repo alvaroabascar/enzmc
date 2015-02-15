@@ -12,7 +12,7 @@ double lvmrq(
            double xi[n][nvars],         /* data points */
            double yi[n],
            double a[m],                 /* parameters (guess) */
-           int *fit[m],                 /* fit[i]=1 --> adjust a[i].
+           int fit[m],                  /* fit[i]=1 --> adjust a[i].
                                          * fit[i]=0 --> keep a[i] fixed. */
            double f(double x[], double params[]), /* model function */
            double covar[][mfit],

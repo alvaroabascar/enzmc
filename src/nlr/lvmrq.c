@@ -46,7 +46,7 @@ double lvmrq(
            double xi[n][nvars],       /* data points */
            double yi[n],
            double a0[m],               /* parameters (guess) */
-           int *fitp[m],               /* ptr to array indicating what parameters
+           int fit[m],                 /* array indicating what parameters
                                        * to fix (0) and what ones to adjust (1)
                                        */
            double f(double x[], double params[]), /* model function */
@@ -56,9 +56,8 @@ double lvmrq(
            double results[2])
 {
     /* definitions here */
-    int i, j, k, iters = 0;
-    int fit[m],       /* indicates what parameters to fit */
-        a_order[m];   /* indicates the original order of the params */
+    int i, j, iters = 0;
+    int a_order[m];   /* indicates the original order of the params */
 
     double chisq,
            a[m],               /* reordered parameters, adjustable first */
@@ -67,10 +66,9 @@ double lvmrq(
            yfit[n],            /* will hold the fitted values for each xi */
            dyda[n][mfit],      /* derivatives. Each row contains the derivatives
                                 * at one point with respect to each parameter */
-           lambda, ainc[mfit], /* ainc = correction over the parameters */
            anew[m],            /* new values of the parameters (a + ainc) */
            sig[n],             /* array of standard deviations */
-           tmp, conv;
+           lambda, tmp, conv;
     /* Build the array of deviations */
     if (sigp != NULL) { /* if deviations are known */
         for (i = 0; i < n; i++) {
@@ -79,16 +77,6 @@ double lvmrq(
     } else { /* deviations are not known, set them to 1 */
         for (i = 0; i < n; i++) {
             sig[i] = 1;
-        }
-    }
-    /* Build the array of parameters to fit (1) or fix (0) */
-    if (fitp != NULL) {
-        for (i = 0; i < m; i++) {
-            fit[i] = (*fitp)[i];
-        }
-    } else {
-        for (i = 0; i < m; i++) {
-            fit[i] = 1;
         }
     }
     /* Build an array with the adjustable parameters first */
@@ -142,7 +130,7 @@ double lvmrq(
         /* calculate alpha and beta, note that alpha is symmetric */
         buildAlphaBeta(n, mfit, lambda, dyda, alpha, beta, sig, yi, yfit);
         /* solve alpha*ainc = beta to get ainc
-         * beta contains the correction over a */
+         * beta will contain now the correction over a */
         gaussj(mfit, 1, alpha, beta); 
         /* update anew */
         for (i = 0; i < m; i++) {

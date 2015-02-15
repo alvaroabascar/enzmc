@@ -38,10 +38,10 @@ int montecarlo(double model(double X[], double p[]), /* model function */
                 int nvars, /* number of independent variables of the model */
                 int m, /* number of parameters of the model */
                 int mfit, /* number of adjustable parameters */
-                int *fit[m], /* ptr to array which indicates what parameters
+                int fit[m], /* ptr to array which indicates what parameters
                               * will be adjusted (fit[i] = 1) and what ones
                               * will be fixed (fit[i] = 0) */
-                double xi[nvars][n], /* data points (indep. variables) */
+                double xi[n][nvars], /* data points (indep. variables) */
                 double *params_mean,
                 double *variances,
                 FILE *fp)
