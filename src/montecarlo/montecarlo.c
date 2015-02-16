@@ -2,6 +2,7 @@
 #include <random.h>
 #include <stdio.h>
 #include <matrix.h>
+#include <time.h>
 
 /* Input:
  *
@@ -24,7 +25,7 @@
  *      4. Guardar parámetros
  *      5. Repetir pasos 2-4 N veces
  *      6. Calcular media y varianza
- *      
+ *
  */
 
 #define abs(x) (x >= 0 ? x : -1*x)
@@ -51,12 +52,10 @@ int montecarlo(double model(double X[], double p[]), /* model function */
     double y[n]; /* dependent variable values at the n given points */
     double yi[n]; /* same, with error added */
     double params_guess[m];
-    double a0;
     double sig[n];
     double *sigp[n];
     double covar[mfit][mfit];
     double results[2];
-    printf("montecarlo called!\n");
     /* build array of y values and array of deviations */
     for (i = 0; i < n; i++) {
         y[i] = model(xi[i], params);

@@ -146,6 +146,8 @@ int run_cli_mode(struct arguments *args)
   /* Means and variacnes of the adjusted parameters */
   double means[model->nparams];
   double variances[model->nparams];
+  /* Number of successful adjustments (returned by montecarlo) */
+  int nsuccess;
 
   /* parse data passed in the --data option (values of the indep variables), and
    * put it into the matrix "data"
@@ -170,14 +172,40 @@ int run_cli_mode(struct arguments *args)
   reorder_data(model->nvars, npoints, data, &data_ord);
   free_matrix_double(&data, model->nvars);
 
-  montecarlo(model->function, params, params, error, NREPS, npoints,
+  nsuccess = montecarlo(model->function, params, params, error, NREPS, npoints,
              model->nvars, model->nparams, nfit, fixed_params, data_ord,
              means, variances, NULL);
-  vprint(model->nparams, means);
-  vprint(model->nparams, variances);
+  free_matrix_double(&data_ord, npoints);
+  print_output(model, variances, means, nsuccess);
   return -1;
 }
 
+void print_output(struct model *model, double *params_variance, double *params_mean, int nsuccess)
+{
+  int i;
+  printf("\n Parameter     Mean      Standard Dev       CV(%%)\n");
+  printf("----------------------------------------------------\n");
+  for (i = 0; i < model->nparams; i++) {
+      if (params_variance[i] > 0.001) {
+          printf("%d | %-6s %10.6f   %10.4f    %10.2f%%\n", i, model->params[i],
+          params_mean[i], sqrt(params_variance[i]),
+          100*sqrt(params_variance[i])/params_mean[i]);
+      } else {
+          printf("%d | %-6s %10.6e   %10.4e    %10.2f%%\n", i, model->params[i],
+                  params_mean[i], sqrt(params_variance[i]),
+                  100*sqrt(params_variance[i])/params_mean[i]);
+      }
+      printf("----------------------------------------------------\n");
+  }
+  printf("Number of succesful adjustments: %d of %d (%.2f%%)\n",
+          nsuccess, NREPS, 100*(float)nsuccess/(float)NREPS);
+}
+
+/* parses the data points, returns the number of values if this is
+ * equal for all the independent variables, or -1 if they do not.
+ * Fills S[] with "nvars" pointers to double arrays, being "nvars" the
+ * number of independent variables of the model
+ */
 int run_file_mode(struct arguments *args)
 {
   return 0;
@@ -341,6 +369,7 @@ int extract_str(char *src, char *dst, char *regexp_str)
   regcomp(&regex, regexp_str, REG_EXTENDED);
   /* if didn't match... */
   if (regexec(&regex, src, 1, pmatch, 0)) {
+    regfree(&regex);
     return -1;
   }
   /* copy the matched string to the destiny string. pmatch[0].rm_so contains the
@@ -350,6 +379,7 @@ int extract_str(char *src, char *dst, char *regexp_str)
   nchars = pmatch[0].rm_eo - pmatch[0].rm_so;
   strncpy(dst, &src[pmatch[0].rm_so], nchars);
   dst[nchars] = '\0'; // end string!
+  regfree(&regex);
   return 0;
 }
 
@@ -385,7 +415,6 @@ int parse_array_double(char *array_raw, double **dst)
   }
 
   *dst = malloc(ndata * sizeof(double));
-  printf("dst = %p\n", dst);
   copy_array_double(*dst, result_tmp, i);
   return ndata;
 }

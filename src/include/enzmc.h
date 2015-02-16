@@ -42,6 +42,8 @@ int get_params(struct model *model, char *raw_data, double *params);
 int get_error(struct model *model, char *raw_data, double *error);
 int get_fixed_params(struct model *model, char *raw_data, int *fixed_ptr);
 
+void print_output(struct model *model, double *variances, double *means,
+                  int nsuccess);
 int extract_str(char *src, char *dst, char *regexp_str);
 int parse_array_double(char *array_str, double **dst);
 void reorder_data(int nvars, int npoints, double *data[], double ***data_ord);
