@@ -8,7 +8,7 @@
 #include "include/enzyme.h"
 #include "include/enzmc.h"
 #include "include/models.h"
-
+#include "include/matrix.h"
 #include "models/models.c"
 
 /* MAX_INDEP, MAX_DATA_CHARS, MAX_PARAMS in models.h */
@@ -132,7 +132,7 @@ int run_cli_mode(struct arguments *args)
   /* Array to store the arrays of values for the independent variables. nvars
    * is the number of independent variables of the model.
    */
-  double **data;
+  double **data = malloc(model->nvars * sizeof(double *));
   /* Array to hold the values of the parameters. */
   double params[model->nparams];
   /* Array to indicate the fixed/adjustable parameters. */
@@ -166,13 +166,15 @@ int run_cli_mode(struct arguments *args)
   /* This will store the same data as "data", but in an order understood by
    * montecarlo
    */
-  double data_ord[model->nvars][npoints];
-  reorder_data(model->nvars, npoints, data, data_ord);
+  double **data_ord;
+  reorder_data(model->nvars, npoints, data, &data_ord);
   free_matrix_double(&data, model->nvars);
 
   montecarlo(model->function, params, params, error, NREPS, npoints,
              model->nvars, model->nparams, nfit, fixed_params, data_ord,
              means, variances, NULL);
+  vprint(model->nparams, means);
+  vprint(model->nparams, variances);
   return -1;
 }
 
@@ -237,12 +239,12 @@ int get_indep_vars(struct model *model, char *raw_data,
       fprintf(stderr, "Error: variable %s is required by the model %s, but it was not found.\n", model->indep_vars[i], model->name);
       return -1;
     }
-    npoints = parse_array_double(match_str, data[i]);
+    npoints = parse_array_double(match_str, &(data[i]));
     /* if indep variables have different number of values, cleanup and signal
      * failure
      */
     if (i > 0 && (npoints != npoints_tmp)) {
-      free_matrix_double(&data, i);
+      //free_matrix_double(data, i);
       fprintf(stderr, "Error: the number of values is not equal for all the independent variables.\n");
       return -2;
     }
@@ -362,12 +364,12 @@ int extract_str(char *src, char *dst, char *regexp_str)
  * In this case the function will consider as array the first match of a set of
  * numbers between brackets.
  */
-int parse_array_double(char *array_raw, double *dst)
+int parse_array_double(char *array_raw, double **dst)
 {
   int i, ndata;
   char *token;
   /* set result_tmp to maximum possible size */
-  double *result_tmp = malloc(MAX_VALUES * sizeof(double));
+  double result_tmp[MAX_VALUES];
   /* first step: clean the array, leave only the digits + brackets */
   char array_clean[100];
   if (extract_str(array_raw, array_clean, "\[[eE., [:digit:]-]+]")) {
@@ -382,10 +384,9 @@ int parse_array_double(char *array_raw, double *dst)
     ndata++;
   }
 
-  dst = malloc(ndata * sizeof(double));
-  copy_array_double(dst, result_tmp, i);
-  /* now free result_tmp, which was (probably) excesively large */
-  free(result_tmp);
+  *dst = malloc(ndata * sizeof(double));
+  printf("dst = %p\n", dst);
+  copy_array_double(*dst, result_tmp, i);
   return ndata;
 }
 
@@ -395,24 +396,27 @@ int parse_array_double(char *array_raw, double *dst)
  * data[npoints][nvars]. This function fills a matrix with this new order.
  */
 void reorder_data(int nvars, int npoints, double *data[],
-                  double data_ord[][npoints])
+                  double ***data_ord)
 {
   int var, point;
+  *data_ord = malloc(npoints * sizeof(double *));
+  for (point = 0; point < npoints; point++) {
+    (*data_ord)[point] = malloc(nvars * sizeof(double));
+  }
   for (var = 0; var < nvars; var++) {
     for (point = 0; point < npoints; point++) {
-      data_ord[point][var] = data[var][point];
+      (*data_ord)[point][var] = data[var][point];
     }
   }
 }
 
-void free_matrix_double(double **array[], int n)
+void free_matrix_double(double **matrix[], int n)
 {
   int i;
   for (i = 0; i < n; i++) {
-    printf("freeing position %p", *array[i]);
-    free(*array[i]);
-    printf(" OK\n");
+    free((*matrix)[i]);
   }
+  free(*matrix);
 }
 
 /* Copy n elements from src to dst */

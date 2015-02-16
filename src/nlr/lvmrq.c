@@ -43,7 +43,7 @@ double lvmrq(
            int m,                     /* number of parameters */
            int mfit,
            int nvars,                 /* number of independent variables */
-           double xi[n][nvars],       /* data points */
+           double *xi[nvars],       /* data points */
            double yi[n],
            double a0[m],               /* parameters (guess) */
            int fit[m],                 /* array indicating what parameters
@@ -98,7 +98,7 @@ double lvmrq(
     /* this function is used as an interface to the provided functions,
      * to calculate the fitted values and the derivatives
      */
-    void func(int n, int m, int mfit, int nvars, double xi[n][nvars],
+    void func(int n, int m, int mfit, int nvars, double *xi[nvars],
               double yi[n], double a[], double dyda[n][mfit], double yfit[n])
     {
         int i, k;
