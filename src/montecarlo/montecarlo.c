@@ -1,6 +1,8 @@
 #include <lvmrq.h>
 #include <random.h>
 #include <stdio.h>
+#include <matrix.h>
+#include <time.h>
 
 /* Input:
  *
@@ -23,7 +25,7 @@
  *      4. Guardar parámetros
  *      5. Repetir pasos 2-4 N veces
  *      6. Calcular media y varianza
- *      
+ *
  */
 
 #define abs(x) (x >= 0 ? x : -1*x)
@@ -37,12 +39,12 @@ int montecarlo(double model(double X[], double p[]), /* model function */
                 int nvars, /* number of independent variables of the model */
                 int m, /* number of parameters of the model */
                 int mfit, /* number of adjustable parameters */
-                int *fit[m], /* ptr to array which indicates what parameters
+                int fit[m], /* ptr to array which indicates what parameters
                               * will be adjusted (fit[i] = 1) and what ones
                               * will be fixed (fit[i] = 0) */
-                double xi[n][nvars], /* data points (indep. variables) */
-                double params_mean[m],
-                double variances[m],
+                double *xi[nvars], /* data points (indep. variables) */
+                double *params_mean,
+                double *variances,
                 FILE *fp)
 {
     int i, j, nsuccess, niters, skip;
@@ -50,7 +52,6 @@ int montecarlo(double model(double X[], double p[]), /* model function */
     double y[n]; /* dependent variable values at the n given points */
     double yi[n]; /* same, with error added */
     double params_guess[m];
-    double a0;
     double sig[n];
     double *sigp[n];
     double covar[mfit][mfit];
@@ -66,7 +67,7 @@ int montecarlo(double model(double X[], double p[]), /* model function */
     }
     if (fp != NULL) {
         fprintf(fp, "y = ");
-        vfprint(fp, n, y);
+        vector_printf(fp, n, y);
     }
     seed = time(NULL); /* set seed */
     for (i = nsuccess = 0; i < nsims; i++) {
@@ -79,7 +80,7 @@ int montecarlo(double model(double X[], double p[]), /* model function */
         }
         if (fp != NULL) {
             fprintf(fp, "yi = ");
-            vfprint(fp, n, yi);
+            vector_printf(fp, n, yi);
         }
         vcopy(m, params_guess, guess); /* original guess array */
         niters = lvmrq(n, m, mfit, nvars, xi, yi, params_guess, fit, model, covar, sigp, results);
@@ -100,14 +101,14 @@ int montecarlo(double model(double X[], double p[]), /* model function */
         if (fp != NULL) {
             fprintf(fp, "- Number of iterations:  %d\n", niters);
             fprintf(fp, "- Parameters:\n");
-            vfprint(fp, m, params_guess);
+            vector_printf(fp, m, params_guess);
             fprintf(fp, "- Chi2: %.4e\n", results[0]);
             fprintf(fp, "- Chi2(niters) - Chi2(niters-1):  %.4e\n", results[1]);
             fprintf(fp, "- Matrix of covariances:\n");
             mfprint(fp, mfit, mfit, covar);
         }
     }
-    printf("\rRunning simulations: 100%\n");
+    printf("\rRunning simulations: 100%%\n");
     for (i = 0; i < m; i++) {
         params_mean[i] /= nsuccess;
         variances[i] /= nsuccess;

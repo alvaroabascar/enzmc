@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <matrix.h>
 
 /* mcopy: copies a matrix, given the number of rows and cols, the matrix (m2)
  * and a destination matrix (m1)*/
@@ -57,8 +58,8 @@ void vprint(int l, double arr[])
     printf(" ]\n");
 }
 
-/* vfprint: prints a vector, given its length n, to a file stream *fp */
-void vfprint(FILE *fp, int l, double arr[])
+/* vector_printf: prints a vector, given its length n, to a file stream *fp */
+void vector_printf(FILE *fp, int l, double arr[])
 {
     int i;
 

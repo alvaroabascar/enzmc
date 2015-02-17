@@ -2,7 +2,7 @@ OBJECTS = montecarlo.o
 
 CC = gcc
 
-CFLAGS = -I../include
+CFLAGS = -I../include/
 
 all: $(OBJECTS)
 

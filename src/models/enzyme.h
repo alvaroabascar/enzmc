@@ -1,4 +1,5 @@
-#ifndef _MICHAELIS_
+#ifndef __MICHAELIS_H__
+#define __MICHAELIS_H__
 
 double michaelis(double S[1], double p[2]);
 /* Michaelis-Menten
@@ -11,7 +12,7 @@ double michaelis(double S[1], double p[2]);
 
 /********************* Multi Substrate models ************************/
 
-double alberty(double S[2], double p[4]);
+double alberty(double S[2], double p[3]);
  /* Alberty equation (multi-substrate kinetic)
  *
  * E = Enzyme
@@ -168,7 +169,7 @@ double michaelistemp(double X[2], double p[3]);
  *       fixed
  */
 
-double michaelisinactiv(double X[2], double p[3]);
+double michaelis_inactiv(double X[2], double p[3]);
 /* Michaelis-Menten kinetics accounting for thermal inactivation of the enzyme
  *
  * Equation:
@@ -179,4 +180,4 @@ double michaelisinactiv(double X[2], double p[3]);
  *           p[3] -> {vmax, Km, kt} (kt = first order inactivation rate constant
  */
 
-#endif
+#endif /* __MICHAELIS_H__ */

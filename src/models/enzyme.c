@@ -1,5 +1,4 @@
 #include "enzyme.h"
-#include <stdio.h>
 #include <math.h>
 
 /* For an explanation of the models, please refer to the header file */
@@ -11,7 +10,7 @@ double michaelis(double S[1], double p[2])
     return p[0] * S[0] / (p[1] + S[0]);
 }
 
-double alberty(double S[2], double p[4])
+double alberty(double S[2], double p[3])
 {
     /* S[0] = [AX], S[1] = [B]
      * p[0] = Vmax, p[1] = KmAX, p[2] = KmB, p[3] = KsA */
@@ -82,7 +81,7 @@ double michaelistemp(double X[2], double p[3])
                                                             (p[2] + X[0]);
 }
 
-double michaelisinactiv(double X[2], double p[3])
+double michaelis_inactiv(double X[2], double p[3])
 {
     /* X[0] = [S], X[1] = t
      * p[0] = Vmax, p[1] = Km, p[2] = kt

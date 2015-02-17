@@ -1,10 +1,12 @@
-CFLAGS = -Iinclude/ -g
+BASE := $(shell dirname $(realpath $(lastword $(MAKEFILE_LIST))))
+
+CFLAGS = -Wall -g -I$(BASE)/include/
 
 LDLIBS = -lm
 
 CC = gcc
 
-DEPS = montecarlo/montecarlo.o nlr/lvmrq.o random/random.o misc/mathlib.o misc/matrix.o lineq/gaussjbs.o models/enzyme.o
+DEPS = montecarlo/montecarlo.o nlr/lvmrq.o random/random.o misc/mathlib.o misc/matrix.o lineq/gaussjbs.o
 
 all:	enzmc
 
@@ -21,8 +23,11 @@ clean:
 	rm enzmc
 
 cleanall:
-	cd lineq; make clean
-	cd misc; make clean
-	cd models; make clean
-	cd nlr; make clean
-	cd random; make clean
+	rm enzmc
+	cd lineq; make clean 2>/dev/null
+	cd misc; make clean 2>/dev/null
+	cd models; make clean 2>/dev/null
+	cd nlr; make clean 2>/dev/null
+	cd random; make clean 2>/dev/null
+	cd models; make clean 2>/dev/null
+	cd montecarlo; make clean 2>/dev/null
