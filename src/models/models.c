@@ -104,3 +104,21 @@ struct model models[] = {
     {}
   }
 };
+
+/* Given the name of a model, return a ptr to the struct model with all the
+ * information necessary to use the model (see models.h).
+ */
+struct model *get_model(char *modelname)
+{
+  int i;
+  /* models is an array of struct model, defined in models.c
+   * end of models is defined by a struct model with all its elements set to
+   * zero / NULL
+   */
+  for (i = 0; models[i].function != NULL; i++) {
+    if (!strcmp(models[i].name, modelname)) {
+      return &(models[i]);
+    }
+  }
+  return NULL;
+}

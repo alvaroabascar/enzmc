@@ -17,4 +17,6 @@ struct model {
   char *indep_vars[MAX_INDEP];                 // names of the indep vars
 };
 
+struct model *get_model(char *modelname);
+
 #endif /* __MODELS_H__ */
