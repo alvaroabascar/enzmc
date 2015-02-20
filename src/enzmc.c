@@ -12,7 +12,7 @@
 #include "models/models.c"
 
 /* MAX_INDEP, MAX_DATA_CHARS, MAX_PARAMS in models.h */
-#define NREPS 10000
+#define NREPS 10
 
 const char *argp_program_bug_address = "alvaroabascar@gmail.com";
 const char *argp_program_version = "version 1.0";
@@ -143,7 +143,7 @@ int run_cli_mode(struct arguments *args)
   int npoints;
   /* Number of parameters to fit or keep fixed */
   int nfit, nfix;
-  /* Means and variacnes of the adjusted parameters */
+  /* Means and variances of the adjusted parameters */
   double means[model->nparams];
   double variances[model->nparams];
   /* Number of successful adjustments (returned by montecarlo) */
@@ -174,7 +174,7 @@ int run_cli_mode(struct arguments *args)
 
   nsuccess = montecarlo(model->function, params, params, error, NREPS, npoints,
              model->nvars, model->nparams, nfit, fixed_params, data_ord,
-             means, variances, NULL);
+             means, variances, fopen("enzmc.out", "w"));
   free_matrix_double(&data_ord, npoints);
   print_output(model, variances, means, nsuccess);
   return -1;
