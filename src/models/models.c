@@ -1,3 +1,4 @@
+#include <string.h>
 #include "models.h"
 #include "enzyme.h"
 #include "enzyme.c"

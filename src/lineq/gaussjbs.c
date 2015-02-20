@@ -28,6 +28,7 @@ int gaussj(int n, int m, double A[][n], double B[][m])
     for (row = 0; row < n; row++) {
         /* find best pivot in row (at right of A[row][row]): */
         max = 0;
+        max_row = row;
         for (i = row; i < n; i++) {
             if (abs(A[row][i]) > abs(max)) {
                 max = A[row][i];
