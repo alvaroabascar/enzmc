@@ -102,7 +102,7 @@ static PyObject *monty_wrapper(PyObject *self, PyObject *args)
   double params_variance[model->nparams];
   nsuccess = montecarlo(model->function, cparams, cguess, dev, nsims, npoints,
                         model->nvars, model->nparams, nfit, cfit, cxi,
-                        params_mean, params_variance, fopen("monty.out", "w"));
+                        params_mean, params_variance, NULL);
 
 
   /* reuse params and guess to store the means and variances of the parameters,

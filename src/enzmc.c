@@ -174,7 +174,7 @@ int run_cli_mode(struct arguments *args)
 
   nsuccess = montecarlo(model->function, params, params, error, NREPS, npoints,
              model->nvars, model->nparams, nfit, fixed_params, data_ord,
-             means, variances, fopen("enzmc.out", "w"));
+             means, variances, NULL);
   free_matrix_double(&data_ord, npoints);
   print_output(model, variances, means, nsuccess);
   return -1;
