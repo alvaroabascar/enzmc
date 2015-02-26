@@ -226,7 +226,7 @@ int PyList_to_array_int(PyObject *list, int **array_int)
 }
 
 static PyMethodDef montyMethods[] = {
-  {"monty", monty_wrapper, METH_VARARGS, "Run simulations."},
+  {"monty", monty_wrapper, METH_VARARGS, "First argument (str): a string indicating the model to use. Eg. \"michaelis\".\nSecond argument (list of floats): a list of values of the parameters, in the order given by the model.\nThird argument (list of floats): a list of (initial) guesses of the parameters, in the same order. Normally this list should be the same as the second argument.\nFourth argument (list of floats): a list indicating which parameters to fit (indicated by a 1 in the corresponding position) and what ones to keep fixed (indicated by a 0 in the corresponding position).\nFifth argument (list of lists of floats): a list of \"experimental points\". Each point is a list of floats, each corresponding to the value of an independent variable of the model (in the order given by the model)\nSixth argument (float): the standard deviation of the gaussian error of the experiment, in absolute value.\nSeventh argument (int): the number of simulations."},
   {NULL, NULL, 0, NULL}
 };
 
